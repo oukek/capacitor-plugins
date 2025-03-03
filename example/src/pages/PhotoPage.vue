@@ -3,40 +3,72 @@
     <h1 class="text-h4 q-mb-md">Photo Plugin Demo</h1>
 
     <div class="q-mb-md" style="max-width: 500px; width: 100%">
-      <q-img
-        v-if="imagePreview"
-        :src="imagePreview"
-        style="width: 100%; max-height: 400px; object-fit: contain"
-        class="q-mb-md rounded-borders"
-      />
-      <div v-else class="flex flex-center bg-grey-3 rounded-borders" style="width: 100%; height: 300px">
-        <q-icon name="photo" size="5rem" color="grey-7" />
+      <canvas
+        ref="canvasRef"
+        width="500"
+        height="300"
+        class="rounded-borders"
+        style="border: 1px solid #ccc; cursor: crosshair;"
+        @mousedown="startDrawing"
+        @mousemove="draw"
+        @mouseup="stopDrawing"
+        @mouseleave="stopDrawing"
+        @touchstart="handleTouchStart"
+        @touchmove="handleTouchMove"
+        @touchend="stopDrawing"
+      ></canvas>
+    </div>
+
+    <div class="row q-col-gutter-md q-mb-md">
+      <div class="col-12 col-sm-4">
+        <q-btn
+          color="primary"
+          icon="brush"
+          label="清除画布"
+          @click="clearCanvas"
+          class="full-width"
+        />
+      </div>
+
+      <div class="col-12 col-sm-4">
+        <q-select
+          v-model="selectedColor"
+          :options="colorOptions"
+          label="选择颜色"
+          filled
+          class="full-width"
+        >
+          <template v-slot:option="scope">
+            <q-item v-bind="scope.itemProps">
+              <q-item-section avatar>
+                <div :style="`width: 20px; height: 20px; background-color: ${scope.opt.value}`" class="rounded-borders"></div>
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>{{ scope.opt.label }}</q-item-label>
+              </q-item-section>
+            </q-item>
+          </template>
+        </q-select>
+      </div>
+
+      <div class="col-12 col-sm-4">
+        <q-select
+          v-model="lineWidth"
+          :options="[1, 3, 5, 8, 10]"
+          label="线条粗细"
+          filled
+          class="full-width"
+        />
       </div>
     </div>
 
     <div class="row q-col-gutter-md">
-      <div class="col-12 col-sm-6">
-        <q-file
-          v-model="selectedFile"
-          label="Select an image"
-          filled
-          accept="image/*"
-          @update:model-value="onFileSelected"
-          class="full-width"
-        >
-          <template v-slot:prepend>
-            <q-icon name="attach_file" />
-          </template>
-        </q-file>
-      </div>
-
-      <div class="col-12 col-sm-6">
+      <div class="col-12">
         <q-btn
           color="primary"
           icon="save"
-          label="Save to Photo Album"
-          :disable="!imagePreview"
-          @click="saveToPhotoAlbum"
+          label="保存到相册"
+          @click="saveCanvasToPhotoAlbum"
           class="full-width"
         />
       </div>
@@ -49,53 +81,114 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { OukekPhotoPlugin } from '@oukek/capacitor-photo';
+import { ref, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
 
 const $q = useQuasar();
-const selectedFile = ref<File | null>(null);
-const imagePreview = ref<string | null>(null);
+const canvasRef = ref<HTMLCanvasElement | null>(null);
+const ctx = ref<CanvasRenderingContext2D | null>(null);
+const isDrawing = ref(false);
 const loading = ref(false);
 
-const onFileSelected = (file: File | null) => {
-  if (!file) {
-    imagePreview.value = null;
-    return;
-  }
+// 绘图设置
+const selectedColor = ref('#000000');
+const lineWidth = ref(3);
+const colorOptions = [
+  { label: '黑色', value: '#000000' },
+  { label: '红色', value: '#FF0000' },
+  { label: '蓝色', value: '#0000FF' },
+  { label: '绿色', value: '#00FF00' },
+  { label: '黄色', value: '#FFFF00' },
+  { label: '紫色', value: '#800080' },
+];
 
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    imagePreview.value = e.target?.result as string;
-  };
-  reader.readAsDataURL(file);
+onMounted(() => {
+  if (canvasRef.value) {
+    ctx.value = canvasRef.value.getContext('2d');
+    if (ctx.value) {
+      ctx.value.lineCap = 'round';
+      ctx.value.lineJoin = 'round';
+      initCanvas();
+    }
+  }
+});
+
+const initCanvas = () => {
+  if (!ctx.value || !canvasRef.value) return;
+
+  // 设置白色背景
+  ctx.value.fillStyle = '#FFFFFF';
+  ctx.value.fillRect(0, 0, canvasRef.value.width, canvasRef.value.height);
 };
 
-const saveToPhotoAlbum = async () => {
-  if (!imagePreview.value) return;
+const startDrawing = (event: MouseEvent) => {
+  if (!ctx.value) return;
+
+  isDrawing.value = true;
+  ctx.value.beginPath();
+  ctx.value.moveTo(event.offsetX, event.offsetY);
+};
+
+const draw = (event: MouseEvent) => {
+  if (!isDrawing.value || !ctx.value) return;
+
+  ctx.value.strokeStyle = selectedColor.value;
+  ctx.value.lineWidth = lineWidth.value;
+  ctx.value.lineTo(event.offsetX, event.offsetY);
+  ctx.value.stroke();
+};
+
+const stopDrawing = () => {
+  isDrawing.value = false;
+};
+
+const handleTouchStart = (event: TouchEvent) => {
+  if (!ctx.value || !canvasRef.value || !event.touches[0]) return;
+  event.preventDefault();
+
+  const touch = event.touches[0];
+  const rect = canvasRef.value.getBoundingClientRect();
+  const offsetX = touch.clientX - rect.left;
+  const offsetY = touch.clientY - rect.top;
+
+  isDrawing.value = true;
+  ctx.value.beginPath();
+  ctx.value.moveTo(offsetX, offsetY);
+};
+
+const handleTouchMove = (event: TouchEvent) => {
+  if (!isDrawing.value || !ctx.value || !canvasRef.value || !event.touches[0]) return;
+  event.preventDefault();
+
+  const touch = event.touches[0];
+  const rect = canvasRef.value.getBoundingClientRect();
+  const offsetX = touch.clientX - rect.left;
+  const offsetY = touch.clientY - rect.top;
+
+  ctx.value.strokeStyle = selectedColor.value;
+  ctx.value.lineWidth = lineWidth.value;
+  ctx.value.lineTo(offsetX, offsetY);
+  ctx.value.stroke();
+};
+
+const clearCanvas = () => {
+  if (!ctx.value || !canvasRef.value) return;
+  ctx.value.fillStyle = '#FFFFFF';
+  ctx.value.fillRect(0, 0, canvasRef.value.width, canvasRef.value.height);
+};
+
+const saveCanvasToPhotoAlbum = async () => {
+  if (!canvasRef.value) return;
 
   try {
     loading.value = true;
-    const result = await OukekPhotoPlugin.saveImageToAlbum({
-      base64Data: imagePreview.value
-    });
-
-    if (result.success) {
-      $q.notify({
-        type: 'positive',
-        message: 'Image saved to photo album successfully!'
-      });
-    } else {
-      $q.notify({
-        type: 'negative',
-        message: 'Failed to save image to photo album'
-      });
-    }
+    const base64Data = canvasRef.value.toDataURL('image/png');
+    console.log('base64Data', base64Data);
   } catch (error) {
-    console.error('Error saving image:', error);
+    console.error('保存图片时出错:', error);
     $q.notify({
       type: 'negative',
-      message: 'Error saving image: ' + (error instanceof Error ? error.message : String(error))
+      message: '保存图片时出错: ' + (error instanceof Error ? error.message : String(error))
     });
   } finally {
     loading.value = false;

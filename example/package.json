@@ -11,13 +11,11 @@
     "test": "echo \"No test specified\" && exit 0",
     "dev": "quasar dev",
     "build": "quasar build",
-    "postinstall": "quasar prepare"
+    "postinstall": "quasar prepare",
+    "dev:ios": "quasar dev -m capacitor -T ios",
+    "build:ios": "quasar build -m capacitor -T ios"
   },
   "dependencies": {
-    "@capacitor/cli": "^7.0.1",
-    "@capacitor/core": "^7.0.0",
-    "@capacitor/ios": "^7.0.0",
-    "@oukek/capacitor-photo": "workspace:*",
     "@quasar/extras": "^1.16.4",
     "quasar": "^2.16.0",
     "vue": "^3.4.18",
