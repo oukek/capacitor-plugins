@@ -31,7 +31,7 @@
   ],
   "scripts": {
     "verify": "pnpm run verify:ios && pnpm run verify:android && pnpm run verify:web",
-    "verify:ios": "xcodebuild -scheme UuPhotoPlugin -destination generic/platform=iOS",
+    "verify:ios": "xcodebuild -scheme OukekPhotoPlugin -destination generic/platform=iOS",
     "verify:android": "cd android && ./gradlew clean build test && cd ..",
     "verify:web": "pnpm run build",
     "lint": "pnpm run eslint && pnpm run prettier -- --check && pnpm run swiftlint -- lint",
@@ -39,7 +39,7 @@
     "eslint": "eslint . --ext ts",
     "prettier": "prettier \"**/*.{css,html,ts,js,java}\" --plugin=prettier-plugin-java",
     "swiftlint": "node-swiftlint",
-    "docgen": "docgen --api UUPhotoPluginPlugin --output-readme README.md --output-json dist/docs.json",
+    "docgen": "docgen --api OukekPhoto --output-readme README.md --output-json dist/docs.json",
     "build": "pnpm run clean && pnpm run docgen && tsc && rollup -c rollup.config.mjs",
     "clean": "rimraf ./dist",
     "watch": "tsc --watch",
@@ -54,14 +54,14 @@
     "@ionic/prettier-config": "^4.0.0",
     "@ionic/swiftlint-config": "^2.0.0",
     "@types/estree": "^1.0.6",
-    "@types/node": "^20.5.9",
+    "@types/node": "^20.17.22",
     "eslint": "^8.57.0",
     "prettier": "^3.4.2",
     "prettier-plugin-java": "^2.6.6",
     "rimraf": "^6.0.1",
     "rollup": "^4.30.1",
     "swiftlint": "^2.0.0",
-    "typescript": "~4.1.5"
+    "typescript": "~4.8.4"
   },
   "peerDependencies": {
     "@capacitor/core": ">=7.0.0"

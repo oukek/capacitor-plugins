@@ -15,7 +15,9 @@
     "sourceMap": true,
     "strict": true,
     "target": "es2017",
-    "types": ["node", "estree"]
+    "types": ["node", "estree"],
+    "useDefineForClassFields": true,
+    "skipLibCheck": true
   },
   "files": ["src/index.ts"]
 }

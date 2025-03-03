@@ -13,7 +13,6 @@ npx cap sync
 
 <docgen-index>
 
-* [`echo(...)`](#echo)
 * [`saveImageToAlbum(...)`](#saveimagetoalbum)
 
 </docgen-index>
@@ -21,25 +20,10 @@ npx cap sync
 <docgen-api>
 <!--Update the source file JSDoc comments and rerun docgen to update the docs below-->
 
-### echo(...)
-
-```typescript
-echo(options: { value: string; }) => any
-```
-
-| Param         | Type                            |
-| ------------- | ------------------------------- |
-| **`options`** | <code>{ value: string; }</code> |
-
-**Returns:** <code>any</code>
-
---------------------
-
-
 ### saveImageToAlbum(...)
 
 ```typescript
-saveImageToAlbum(options: { base64Data: string; }) => any
+saveImageToAlbum(options: { base64Data: string; }) => Promise<{ success: boolean; }>
 ```
 
 Save base64 image data to photo album
@@ -48,7 +32,7 @@ Save base64 image data to photo album
 | ------------- | ------------------------------------ | ---------------------------- |
 | **`options`** | <code>{ base64Data: string; }</code> | The options for saving image |
 
-**Returns:** <code>any</code>
+**Returns:** <code>Promise&lt;{ success: boolean; }&gt;</code>
 
 --------------------
 
