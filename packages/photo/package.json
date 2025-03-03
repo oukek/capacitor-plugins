@@ -13,7 +13,7 @@
     "ios/Sources",
     "ios/Tests",
     "Package.swift",
-    "CapacitorPhotoPlugin.podspec"
+    "OukekCapacitorPhoto.podspec"
   ],
   "author": "charlie",
   "license": "MIT",
