@@ -1,0 +1,11 @@
+这是一个 pnpm workspace 项目
+用于开发capacitor插件，并且提供在 quasar 中使用的例子
+
+项目介绍：
+docs 是插件开发的文档
+example 是插件使用的示例
+packages 是插件的源码
+
+
+
+

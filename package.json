@@ -1,0 +1,25 @@
+{
+  "name": "@oukek/capacitor-plugins",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Capacitor plugins monorepo",
+  "scripts": {
+    "build": "pnpm -r build",
+    "clean": "pnpm -r clean",
+    "lint": "pnpm -r lint",
+    "fmt": "pnpm -r fmt",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm build && changeset publish"
+  },
+  "keywords": [
+    "capacitor",
+    "plugin",
+    "monorepo"
+  ],
+  "author": "charlie",
+  "license": "MIT",
+  "devDependencies": {
+    "@changesets/cli": "^2.27.1"
+  }
+} 
