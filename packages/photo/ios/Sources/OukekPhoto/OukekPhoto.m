@@ -2,6 +2,5 @@
 #import <Capacitor/Capacitor.h>
 
 CAP_PLUGIN(OukekPhoto, "OukekPhoto",
-    CAP_PLUGIN_METHOD(echo, CAPPluginReturnPromise);
     CAP_PLUGIN_METHOD(saveImageToAlbum, CAPPluginReturnPromise);
 ) 
