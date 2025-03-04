@@ -2,5 +2,9 @@
   "appId": "org.capacitor.quasar.app",
   "appName": "Quasar App",
   "webDir": "www",
-  "plugins": {}
+  "plugins": {
+    "OukekPhoto": {
+      "enabled": true
+    }
+  }
 }

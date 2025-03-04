@@ -83,6 +83,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
+import { OukekPhotoPlugin } from '@oukek/capacitor-photo';
 
 const $q = useQuasar();
 const canvasRef = ref<HTMLCanvasElement | null>(null);
@@ -184,6 +185,31 @@ const saveCanvasToPhotoAlbum = async () => {
     loading.value = true;
     const base64Data = canvasRef.value.toDataURL('image/png');
     console.log('base64Data', base64Data);
+
+    try {
+      // 调用插件保存图片到相册
+      const result = await OukekPhotoPlugin.saveImageToAlbum({
+        base64Data: base64Data
+      });
+
+      if (result.success) {
+        $q.notify({
+          type: 'positive',
+          message: '图片已成功保存到相册'
+        });
+      } else {
+        $q.notify({
+          type: 'negative',
+          message: '保存图片失败'
+        });
+      }
+    } catch (pluginError) {
+      console.error('插件调用出错:', pluginError);
+      $q.notify({
+        type: 'negative',
+        message: '插件调用出错: ' + (pluginError instanceof Error ? pluginError.message : String(pluginError))
+      });
+    }
   } catch (error) {
     console.error('保存图片时出错:', error);
     $q.notify({
