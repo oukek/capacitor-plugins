@@ -1,12 +1,23 @@
-# uu-photo-plugin
+# @oukek/capacitor-photo
 
 相册相关插件
 
 ## Install
 
 ```bash
-npm install uu-photo-plugin
+npm install @oukek/capacitor-photo
 npx cap sync
+```
+
+## iOS 权限配置
+
+在 iOS 平台上使用此插件需要在 `Info.plist` 文件中添加以下权限：
+
+```xml
+<key>NSPhotoLibraryAddUsageDescription</key>
+<string>需要访问您的相册以保存图片</string>
+<key>NSPhotoLibraryUsageDescription</key>
+<string>需要访问您的相册以保存图片</string>
 ```
 
 ## API
