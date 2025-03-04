@@ -4,7 +4,7 @@ export default {
     {
       file: 'dist/plugin.js',
       format: 'iife',
-      name: 'capacitorPhotoPlugin',
+      name: 'OukekPhotoPlugin',
       globals: {
         '@capacitor/core': 'capacitorExports',
       },
