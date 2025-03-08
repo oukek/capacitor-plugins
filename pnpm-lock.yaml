@@ -14,6 +14,9 @@ importers:
 
   example:
     dependencies:
+      '@oukek/capacitor-pay':
+        specifier: workspace:*
+        version: link:../packages/pay
       '@oukek/capacitor-photo':
         specifier: workspace:*
         version: link:../packages/photo
@@ -63,6 +66,57 @@ importers:
       vue-tsc:
         specifier: ^2.0.29
         version: 2.2.8(typescript@5.5.4)
+
+  packages/pay:
+    devDependencies:
+      '@capacitor/android':
+        specifier: ^7.0.0
+        version: 7.0.0(@capacitor/core@7.0.1)
+      '@capacitor/core':
+        specifier: ^7.0.0
+        version: 7.0.1
+      '@capacitor/docgen':
+        specifier: ^0.3.0
+        version: 0.3.0
+      '@capacitor/ios':
+        specifier: ^7.0.0
+        version: 7.0.0(@capacitor/core@7.0.1)
+      '@ionic/eslint-config':
+        specifier: ^0.4.0
+        version: 0.4.0(eslint@8.57.1)(typescript@4.8.4)
+      '@ionic/prettier-config':
+        specifier: ^4.0.0
+        version: 4.0.0(prettier@3.5.3)
+      '@ionic/swiftlint-config':
+        specifier: ^2.0.0
+        version: 2.0.0
+      '@types/estree':
+        specifier: ^1.0.6
+        version: 1.0.6
+      '@types/node':
+        specifier: ^20.17.22
+        version: 20.17.22
+      eslint:
+        specifier: ^8.57.0
+        version: 8.57.1
+      prettier:
+        specifier: ^3.4.2
+        version: 3.5.3
+      prettier-plugin-java:
+        specifier: ^2.6.6
+        version: 2.6.7(prettier@3.5.3)
+      rimraf:
+        specifier: ^6.0.1
+        version: 6.0.1
+      rollup:
+        specifier: ^4.30.1
+        version: 4.34.9
+      swiftlint:
+        specifier: ^2.0.0
+        version: 2.0.0(typescript@4.8.4)
+      typescript:
+        specifier: ~4.8.4
+        version: 4.8.4
 
   packages/photo:
     devDependencies:
