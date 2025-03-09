@@ -13,6 +13,7 @@ def capacitor_pods
   pod 'CapacitorCordova', :path => '../../../../node_modules/.pnpm/@capacitor+ios@7.0.0_@capacitor+core@7.0.1/node_modules/@capacitor/ios'
   pod 'CapacitorApp', :path => '../../../../node_modules/.pnpm/@capacitor+app@7.0.0_@capacitor+core@7.0.1/node_modules/@capacitor/app'
   pod 'OukekCapacitorPhoto', :path => '../../../../packages/photo'
+  pod 'OukekCapacitorPay', :path => '../../../../packages/pay'
 end
 
 target 'App' do

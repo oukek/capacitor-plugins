@@ -1,179 +1,187 @@
 # @oukek/capacitor-pay
 
-Capacitor plugin for in-app purchases
+Capacitor 应用内购买插件
 
-## Install
+## 安装
 
 ```bash
 npm install @oukek/capacitor-pay
 npx cap sync
 ```
 
+## 功能特点
+
+- 支持 iOS 应用内购买（基于 StoreKit）
+- 支持获取商品信息
+- 支持购买商品
+- 支持恢复购买
+- 支持购买状态实时监听
+- 自动处理收据验证
+
 ## API
-
-<docgen-index>
-
-
-
-</docgen-index>
-
-## Example
-
-### Vue 3 组件示例
-
-```vue
-<template>
-  <div>
-    <div v-for="product in products" :key="product.productId">
-      <h3>{{ product.localizedTitle }}</h3>
-      <p>{{ product.localizedDescription }}</p>
-      <button @click="purchase(product.productId)">
-        购买 ({{ product.localizedPrice }})
-      </button>
-    </div>
-  </div>
-</template>
-
-<script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import { OukekPay } from '@oukek/capacitor-pay'
-
-const products = ref([])
-let purchaseListener: any = null
-
-// 初始化商品列表
-const initProducts = async () => {
-  try {
-    const result = await OukekPay.getProducts({
-      productIds: ['your_product_id_1', 'your_product_id_2']
-    })
-    products.value = result.products
-  } catch (error) {
-    console.error('Failed to get products:', error)
-  }
-}
-
-// 购买商品
-const purchase = async (productId: string) => {
-  try {
-    await OukekPay.purchase({ productId })
-  } catch (error) {
-    console.error('Purchase failed:', error)
-  }
-}
-
-// 监听购买状态
-const setupPurchaseListener = async () => {
-  purchaseListener = await OukekPay.addListener('purchaseUpdated', (state) => {
-    switch (state.state) {
-      case 'succeeded':
-        console.log('Purchase succeeded:', state)
-        // 在这里处理购买成功的逻辑
-        // 比如发送收据到服务器进行验证
-        if (state.receipt) {
-          verifyReceipt(state.receipt)
-        }
-        break
-      case 'failed':
-        console.error('Purchase failed:', state.error)
-        break
-      case 'cancelled':
-        console.log('Purchase cancelled')
-        break
-    }
-  })
-}
-
-// 恢复购买
-const restorePurchases = async () => {
-  try {
-    await OukekPay.restorePurchases()
-  } catch (error) {
-    console.error('Restore failed:', error)
-  }
-}
-
-// 验证收据（示例）
-const verifyReceipt = async (receipt: string) => {
-  try {
-    // 发送收据到你的服务器进行验证
-    const response = await fetch('your-server/verify-receipt', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ receipt }),
-    })
-    const result = await response.json()
-    if (result.valid) {
-      // 处理验证成功的逻辑
-    }
-  } catch (error) {
-    console.error('Receipt verification failed:', error)
-  }
-}
-
-onMounted(async () => {
-  await initProducts()
-  await setupPurchaseListener()
-})
-
-onUnmounted(async () => {
-  await OukekPay.removeAllListeners()
-})
-</script>
-```
-
-## API 详细说明
 
 ### getProducts
 
+获取商品信息列表。
+
 ```typescript
-getProducts(options: { productIds: string[] }) => Promise<{
-  products: Array<{
-    productId: string;
-    price: string;
-    localizedPrice: string;
-    localizedTitle: string;
-    localizedDescription: string;
-  }>;
+interface Product {
+  productId: string;        // 商品ID
+  price: string;           // 价格
+  localizedPrice: string;  // 本地化价格
+  localizedTitle: string;  // 本地化标题
+  localizedDescription: string; // 本地化描述
+}
+
+interface GetProductsResult {
+  products: Product[];
   invalidProductIds: string[];
-}>
+}
+
+getProducts(options: { 
+  productIds: string[] 
+}): Promise<GetProductsResult>
 ```
 
 ### purchase
 
+购买指定商品。
+
 ```typescript
-purchase(options: { productId: string }) => Promise<void>
+purchase(options: { 
+  productId: string 
+}): Promise<void>
 ```
 
 ### restorePurchases
 
-```typescript
-restorePurchases() => Promise<void>
-```
-
-### addListener
+恢复之前的购买。
 
 ```typescript
-addListener(
-  eventName: 'purchaseUpdated',
-  listenerFunc: (state: PurchaseState) => void
-) => Promise<PluginListenerHandle>
+restorePurchases(): Promise<void>
 ```
 
-### PurchaseState
+### 购买状态监听
+
+通过 `addListener` 监听购买状态变化。
 
 ```typescript
 interface PurchaseState {
   state: 'purchasing' | 'cancelled' | 'failed' | 'succeeded' | 'restored' | 'restoreFailed' | 'deferred';
   productId?: string;
   transactionId?: string;
-  receipt?: string;
+  receipt?: string;        // base64 编码的收据数据
   error?: string;
-  transactions?: Array<{
+  transactions?: Array<{   // 仅在恢复购买时返回
     productId: string;
     transactionId: string;
   }>;
 }
+
+addListener(
+  'purchaseUpdated',
+  (state: PurchaseState) => void
+): Promise<PluginListenerHandle>
 ```
+
+## 使用示例
+
+```typescript
+import { OukekPayPlugin } from '@oukek/capacitor-pay';
+
+// 获取商品列表
+const getProducts = async () => {
+  try {
+    const result = await OukekPayPlugin.getProducts({
+      productIds: ['com.example.product1', 'com.example.product2']
+    });
+    console.log('Products:', result.products);
+    console.log('Invalid IDs:', result.invalidProductIds);
+  } catch (error) {
+    console.error('Failed to get products:', error);
+  }
+};
+
+// 购买商品
+const purchase = async (productId: string) => {
+  try {
+    await OukekPayPlugin.purchase({ productId });
+  } catch (error) {
+    console.error('Purchase failed:', error);
+  }
+};
+
+// 监听购买状态
+const setupPurchaseListener = async () => {
+  await OukekPayPlugin.addListener('purchaseUpdated', (state) => {
+    switch (state.state) {
+      case 'purchasing':
+        console.log('正在购买...');
+        break;
+      case 'succeeded':
+        console.log('购买成功:', state);
+        // 在这里处理收据验证
+        if (state.receipt) {
+          verifyReceipt(state.receipt);
+        }
+        break;
+      case 'failed':
+        console.error('购买失败:', state.error);
+        break;
+      case 'cancelled':
+        console.log('购买已取消');
+        break;
+      case 'restored':
+        console.log('购买已恢复:', state.transactions);
+        break;
+      case 'restoreFailed':
+        console.error('恢复购买失败:', state.error);
+        break;
+      case 'deferred':
+        console.log('购买已延期');
+        break;
+    }
+  });
+};
+
+// 恢复购买
+const restore = async () => {
+  try {
+    await OukekPayPlugin.restorePurchases();
+  } catch (error) {
+    console.error('Restore failed:', error);
+  }
+};
+
+// 清理监听器
+const cleanup = async () => {
+  await OukekPayPlugin.removeAllListeners();
+};
+
+// 收据验证示例
+const verifyReceipt = async (receipt: string) => {
+  try {
+    const response = await fetch('your-server/verify-receipt', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ receipt }),
+    });
+    const result = await response.json();
+    if (result.valid) {
+      // 处理验证成功的逻辑
+    }
+  } catch (error) {
+    console.error('Receipt verification failed:', error);
+  }
+};
+```
+
+## 注意事项
+
+1. iOS 端使用了 [DYFStore](https://github.com/dgynfi/DYFStore) 库进行 StoreKit 的封装
+2. 收据验证建议在服务端进行，以确保安全性
+3. 购买成功后会自动获取并返回 base64 编码的收据数据
+4. 恢复购买会返回所有已恢复的交易信息
+5. 请确保在组件卸载时清理监听器

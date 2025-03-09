@@ -1,21 +1,18 @@
 import type { PluginListenerHandle } from '@capacitor/core';
 
 export interface OukekPay {
-}
-
-export interface OukekPayPlugin {
   /**
    * 获取商品列表
    * @param options 商品ID列表
    */
   getProducts(options: { productIds: string[] }): Promise<{
-    products: Array<{
+    products: {
       productId: string;
       price: string;
       localizedPrice: string;
       localizedTitle: string;
       localizedDescription: string;
-    }>;
+    }[];
     invalidProductIds: string[];
   }>;
 
@@ -54,8 +51,8 @@ export interface PurchaseState {
   transactionId?: string;
   receipt?: string;
   error?: string;
-  transactions?: Array<{
+  transactions?: {
     productId: string;
     transactionId: string;
-  }>;
+  }[];
 }

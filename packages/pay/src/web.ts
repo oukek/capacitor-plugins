@@ -1,16 +1,17 @@
 import { WebPlugin } from '@capacitor/core';
+import type { PluginListenerHandle } from '@capacitor/core';
 
-import type { OukekPayPlugin, PurchaseState } from './definitions';
+import type { OukekPay, PurchaseState } from './definitions';
 
-export class OukekPayWeb extends WebPlugin implements OukekPayPlugin {
+export class OukekPayWeb extends WebPlugin implements OukekPay {
   async getProducts(options: { productIds: string[] }): Promise<{
-    products: Array<{
+    products: {
       productId: string;
       price: string;
       localizedPrice: string;
       localizedTitle: string;
       localizedDescription: string;
-    }>;
+    }[];
     invalidProductIds: string[];
   }> {
     console.warn('getProducts is not implemented on web');
@@ -31,7 +32,7 @@ export class OukekPayWeb extends WebPlugin implements OukekPayPlugin {
   async addListener(
     eventName: 'purchaseUpdated',
     listenerFunc: (state: PurchaseState) => void,
-  ) {
+  ): Promise<PluginListenerHandle> {
     return super.addListener(eventName, listenerFunc);
   }
 

@@ -57,6 +57,12 @@ const linksList: EssentialLinkProps[] = [
     link: '/'
   },
   {
+    title: 'Pay',
+    caption: 'Pay Plugin Demo',
+    icon: 'payment',
+    link: '/pay'
+  },
+  {
     title: 'Capacitor Docs',
     caption: 'capacitorjs.com',
     icon: 'school',
