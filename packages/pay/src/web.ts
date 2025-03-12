@@ -1,42 +1,28 @@
-import { WebPlugin } from '@capacitor/core';
-import type { PluginListenerHandle } from '@capacitor/core';
+import { WebPlugin, type PluginListenerHandle } from '@capacitor/core';
 
-import type { OukekPay, PurchaseState } from './definitions';
+import type { OukekPay as OukekPayPlugin, GetProductsResult, PurchaseUpdatedState } from './definitions';
 
-export class OukekPayWeb extends WebPlugin implements OukekPay {
-  async getProducts(options: { productIds: string[] }): Promise<{
-    products: {
-      productId: string;
-      price: string;
-      localizedPrice: string;
-      localizedTitle: string;
-      localizedDescription: string;
-    }[];
-    invalidProductIds: string[];
-  }> {
-    console.warn('getProducts is not implemented on web');
-    return {
-      products: [],
-      invalidProductIds: options.productIds,
-    };
+export class OukekPayWeb extends WebPlugin implements OukekPayPlugin {
+  async getProducts(): Promise<GetProductsResult> {
+    throw this.unimplemented('Not implemented on web.');
   }
 
-  async purchase(options: { productId: string }): Promise<void> {
-    console.warn(`purchase is not implemented on web: ${options.productId}`);
+  async purchase(): Promise<void> {
+    throw this.unimplemented('Not implemented on web.');
   }
 
   async restorePurchases(): Promise<void> {
-    console.warn('restorePurchases is not implemented on web');
+    throw this.unimplemented('Not implemented on web.');
   }
 
-  async addListener(
+  override async addListener(
     eventName: 'purchaseUpdated',
-    listenerFunc: (state: PurchaseState) => void,
+    listenerFunc: (state: PurchaseUpdatedState) => void,
   ): Promise<PluginListenerHandle> {
     return super.addListener(eventName, listenerFunc);
   }
 
-  async removeAllListeners(): Promise<void> {
-    return super.removeAllListeners();
+  override async removeAllListeners(): Promise<void> {
+    await super.removeAllListeners();
   }
 }

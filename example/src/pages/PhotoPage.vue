@@ -83,7 +83,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
-import { OukekPhotoPlugin } from '@oukek/capacitor-photo';
+import { OukekPhoto } from '@oukek/capacitor-photo';
 
 const $q = useQuasar();
 const canvasRef = ref<HTMLCanvasElement | null>(null);
@@ -188,7 +188,7 @@ const saveCanvasToPhotoAlbum = async () => {
 
     try {
       // 调用插件保存图片到相册
-      const result = await OukekPhotoPlugin.saveImageToAlbum({
+      const result = await OukekPhoto.saveImageToAlbum({
         base64Data: base64Data
       });
 

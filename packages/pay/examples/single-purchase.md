@@ -48,10 +48,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { OukekPayPlugin } from '@oukek/capacitor-pay'
+import { OukekPay } from '@oukek/capacitor-pay'
+import type { Product, PurchaseUpdatedState } from '@oukek/capacitor-pay'
 
 // 商品列表
-const products = ref<any[]>([])
+const products = ref<Product[]>([])
 const loading = ref(false)
 const error = ref('')
 const purchasing = ref('')
@@ -66,7 +67,7 @@ const PRODUCT_IDS = [
 ]
 
 // 商品图片映射
-const PRODUCT_IMAGES = {
+const PRODUCT_IMAGES: Record<string, string> = {
   'com.game.diamonds.100': '/assets/diamonds.png',
   'com.game.coins.1000': '/assets/coins.png',
   'com.game.energy.50': '/assets/energy.png'
@@ -83,7 +84,7 @@ const initProducts = async () => {
   error.value = ''
   
   try {
-    const result = await OukekPayPlugin.getProducts({
+    const result = await OukekPay.getProducts({
       productIds: PRODUCT_IDS
     })
     
@@ -107,7 +108,7 @@ const purchase = async (productId: string) => {
   purchaseStatus.value = ''
   
   try {
-    await OukekPayPlugin.purchase({ productId })
+    await OukekPay.purchase({ productId })
   } catch (err) {
     showPurchaseMessage('购买失败，请重试', 'error')
     console.error('购买失败:', err)
@@ -129,7 +130,7 @@ const showPurchaseMessage = (message: string, status: 'success' | 'error' | 'inf
 }
 
 // 处理购买状态
-const handlePurchaseState = async (state: any) => {
+const handlePurchaseState = async (state: PurchaseUpdatedState) => {
   switch (state.state) {
     case 'purchasing':
       showPurchaseMessage('正在处理购买...', 'info')
@@ -139,7 +140,12 @@ const handlePurchaseState = async (state: any) => {
       showPurchaseMessage('购买成功！', 'success')
       // 发送收据到服务器进行验证
       if (state.receipt) {
-        await verifyReceipt(state.receipt)
+        await verifyReceipt({
+          receipt: state.receipt,
+          productId: state.productId!,
+          transactionId: state.transactionId!,
+          purchaseDate: state.purchaseDate
+        })
       }
       break
       
@@ -150,11 +156,22 @@ const handlePurchaseState = async (state: any) => {
     case 'cancelled':
       showPurchaseMessage('购买已取消', 'info')
       break
+      
+    case 'deferred':
+      showPurchaseMessage('购买需要批准，请等待...', 'info')
+      break
   }
 }
 
 // 验证收据
-const verifyReceipt = async (receipt: string) => {
+interface VerifyReceiptParams {
+  receipt: string
+  productId: string
+  transactionId: string
+  purchaseDate?: number
+}
+
+const verifyReceipt = async (params: VerifyReceiptParams) => {
   try {
     const response = await fetch('https://api.yourserver.com/verify-receipt', {
       method: 'POST',
@@ -162,8 +179,7 @@ const verifyReceipt = async (receipt: string) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ 
-        receipt,
-        // 可以添加其他需要的信息
+        ...params,
         userId: 'current-user-id',
         platform: 'ios'
       }),
@@ -185,14 +201,19 @@ const verifyReceipt = async (receipt: string) => {
 }
 
 // 更新用户物品（示例）
-const updateUserItems = (items: any) => {
+interface VirtualItem {
+  virtualItemId: string
+  amount: number
+}
+
+const updateUserItems = (items: VirtualItem[]) => {
   // 这里实现更新用户物品的逻辑
   console.log('更新用户物品:', items)
 }
 
 // 设置购买监听器
 const setupPurchaseListener = async () => {
-  await OukekPayPlugin.addListener('purchaseUpdated', handlePurchaseState)
+  await OukekPay.addListener('purchaseUpdated', handlePurchaseState)
 }
 
 // 组件挂载时初始化
@@ -203,7 +224,7 @@ onMounted(async () => {
 
 // 组件卸载时清理
 onUnmounted(async () => {
-  await OukekPayPlugin.removeAllListeners()
+  await OukekPay.removeAllListeners()
 })
 </script>
 
@@ -260,27 +281,27 @@ onUnmounted(async () => {
 .price {
   font-size: 1.2em;
   font-weight: bold;
-  color: #2c3e50;
+  color: #42b983;
   margin: 10px 0;
 }
 
 .purchase-button {
-  background: #4CAF50;
+  background: #42b983;
   color: white;
   border: none;
   padding: 10px 20px;
   border-radius: 4px;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: background-color 0.3s;
+}
+
+.purchase-button:hover {
+  background: #3aa876;
 }
 
 .purchase-button:disabled {
-  background: #cccccc;
+  background: #ccc;
   cursor: not-allowed;
-}
-
-.purchase-button:hover:not(:disabled) {
-  background: #45a049;
 }
 
 .purchase-message {
@@ -288,27 +309,33 @@ onUnmounted(async () => {
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 15px 30px;
+  padding: 10px 20px;
   border-radius: 4px;
   color: white;
-  animation: fadeIn 0.3s ease;
+  animation: fadeIn 0.3s ease-in-out;
 }
 
-.purchase-message.success {
-  background: #4CAF50;
+.success {
+  background: #42b983;
 }
 
-.purchase-message.error {
+.error {
   background: #ff4444;
 }
 
-.purchase-message.info {
-  background: #2196F3;
+.info {
+  background: #2196f3;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translate(-50%, 20px); }
-  to { opacity: 1; transform: translate(-50%, 0); }
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 </style>
 ```

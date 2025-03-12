@@ -64,17 +64,17 @@ interface ProductConfig {
 ```typescript
 // 使用 Capacitor Pay 插件获取商品信息
 const getProducts = async (productIds: string[]) => {
-  const result = await OukekPayPlugin.getProducts({ productIds });
+  const result = await OukekPay.getProducts({ productIds });
   return result;
 }
 
 // App Store 返回的商品信息
 interface Product {
   productId: string;
-  price: string;
-  localizedPrice: string;
-  localizedTitle: string;
-  localizedDescription: string;
+  price: number;           // 价格（数字形式）
+  localizedPrice: string;  // 本地化价格（带货币符号）
+  localizedTitle: string;  // 本地化标题
+  localizedDescription: string;  // 本地化描述
 }
 ```
 
@@ -85,7 +85,7 @@ interface Product {
 ```typescript
 // 前端发起购买
 const purchase = async (productId: string) => {
-  await OukekPayPlugin.purchase({ productId });
+  await OukekPay.purchase({ productId });
 }
 ```
 
@@ -94,18 +94,44 @@ const purchase = async (productId: string) => {
 ```typescript
 // 设置购买状态监听
 const setupPurchaseListener = async () => {
-  await OukekPayPlugin.addListener('purchaseUpdated', handlePurchaseState);
+  await OukekPay.addListener('purchaseUpdated', handlePurchaseState);
 }
 
 // 处理购买状态
-const handlePurchaseState = async (state: PurchaseState) => {
+const handlePurchaseState = async (state: PurchaseUpdatedState) => {
   switch (state.state) {
+    case 'purchasing':
+      // 正在购买中
+      break;
     case 'succeeded':
       if (state.receipt) {
-        await verifyPurchase(state.receipt, state.productId);
+        // 购买成功，验证收据
+        await verifyPurchase({
+          receipt: state.receipt,
+          productId: state.productId!,
+          transactionId: state.transactionId!,
+          originalTransactionId: state.originalTransactionId,
+          purchaseDate: state.purchaseDate,
+          expirationDate: state.expirationDate
+        });
       }
       break;
-    // ... 其他状态处理
+    case 'failed':
+      // 购买失败
+      console.error(state.error);
+      break;
+    case 'cancelled':
+      // 用户取消购买
+      break;
+    case 'deferred':
+      // 等待批准（比如家长控制）
+      break;
+    case 'restored':
+      // 恢复购买成功
+      if (state.transactions) {
+        await handleRestoredTransactions(state.transactions);
+      }
+      break;
   }
 }
 ```
@@ -114,7 +140,16 @@ const handlePurchaseState = async (state: PurchaseState) => {
 
 ```typescript
 // 前端发送验证请求
-const verifyPurchase = async (receipt: string, productId: string) => {
+interface VerifyPurchaseParams {
+  receipt: string;
+  productId: string;
+  transactionId: string;
+  originalTransactionId?: string;
+  purchaseDate?: number;
+  expirationDate?: number;
+}
+
+const verifyPurchase = async (params: VerifyPurchaseParams) => {
   const response = await fetch('https://api.yourserver.com/iap/verify', {
     method: 'POST',
     headers: {
@@ -122,8 +157,7 @@ const verifyPurchase = async (receipt: string, productId: string) => {
       'Authorization': 'Bearer YOUR_TOKEN'
     },
     body: JSON.stringify({
-      receipt,
-      productId,
+      ...params,
       userId: 'current-user-id',
       platform: 'ios'
     })
@@ -133,10 +167,14 @@ const verifyPurchase = async (receipt: string, productId: string) => {
 
 // 后端验证接口请求格式
 interface VerifyRequest {
-  receipt: string;      // App Store 收据
-  productId: string;    // 商品ID
-  userId: string;       // 用户ID
-  platform: 'ios';      // 平台
+  receipt: string;              // App Store 收据
+  productId: string;            // 商品ID
+  transactionId: string;        // 交易ID
+  originalTransactionId?: string; // 原始交易ID（订阅续期用）
+  purchaseDate?: number;        // 购买时间戳
+  expirationDate?: number;      // 过期时间戳（订阅商品）
+  userId: string;               // 用户ID
+  platform: 'ios';              // 平台
 }
 
 // 后端验证接口返回格式
@@ -145,8 +183,9 @@ interface VerifyResponse {
   error?: string;       // 错误信息
   transaction?: {
     transactionId: string;    // App Store 交易ID
-    purchaseDate: string;     // 购买时间
-    expiryDate?: string;      // 订阅过期时间（仅订阅商品）
+    originalTransactionId?: string;  // 原始交易ID
+    purchaseDate: number;     // 购买时间戳
+    expirationDate?: number;  // 订阅过期时间戳
   };
   // 消耗型商品返回的虚拟物品信息
   items?: {
@@ -157,11 +196,12 @@ interface VerifyResponse {
   subscription?: {
     status: 'active' | 'expired' | 'grace_period';  // 订阅状态
     productId: string;        // 商品ID
-    startDate: string;        // 开始时间
-    expiryDate: string;       // 过期时间
+    startDate: number;        // 开始时间戳
+    expiryDate: number;       // 过期时间戳
     autoRenewing: boolean;    // 是否自动续订
-    gracePeriodEndDate?: string;  // 宽限期结束时间
+    gracePeriodEndDate?: number;  // 宽限期结束时间戳
     features: string[];       // 包含的特权
+    isUpgraded: boolean;      // 是否已升级
   };
 }
 ```
@@ -188,10 +228,11 @@ interface SubscriptionStatus {
   subscriptions: {
     productId: string;        // 商品ID
     status: 'active' | 'expired' | 'grace_period';  // 状态
-    expiryDate: string;       // 过期时间
+    expiryDate: number;       // 过期时间戳
     autoRenewing: boolean;    // 是否自动续订
-    gracePeriodEndDate?: string;  // 宽限期结束时间
+    gracePeriodEndDate?: number;  // 宽限期结束时间戳
     features: string[];       // 特权列表
+    isUpgraded: boolean;      // 是否已升级
   }[];
 }
 ```
@@ -201,18 +242,19 @@ interface SubscriptionStatus {
 ```typescript
 // 前端发起恢复
 const restorePurchases = async () => {
-  await OukekPayPlugin.restorePurchases();
+  await OukekPay.restorePurchases();
 }
 
-// 处理恢复状态
-const handleRestoreState = async (state: PurchaseState) => {
-  if (state.state === 'restored' && state.receipt) {
-    await verifyRestore(state.receipt);
+// 处理恢复的交易
+const handleRestoredTransactions = async (transactions: { productId: string; transactionId: string }[]) => {
+  // 向后端验证每个恢复的交易
+  for (const transaction of transactions) {
+    await verifyRestore(transaction);
   }
 }
 
 // 验证恢复的购买
-const verifyRestore = async (receipt: string) => {
+const verifyRestore = async (transaction: { productId: string; transactionId: string }) => {
   const response = await fetch('https://api.yourserver.com/iap/restore', {
     method: 'POST',
     headers: {
@@ -220,7 +262,7 @@ const verifyRestore = async (receipt: string) => {
       'Authorization': 'Bearer YOUR_TOKEN'
     },
     body: JSON.stringify({
-      receipt,
+      ...transaction,
       userId: 'current-user-id',
       platform: 'ios'
     })
@@ -236,12 +278,13 @@ interface RestoreResponse {
     type: 'subscription' | 'consumable';
     productId: string;
     transactionId: string;
-    purchaseDate: string;
+    purchaseDate: number;
     // 订阅商品的额外信息
     subscription?: {
       status: 'active' | 'expired';
-      expiryDate: string;
+      expiryDate: number;
       features: string[];
+      isUpgraded: boolean;
     };
     // 消耗型商品的额外信息
     consumable?: {
@@ -251,83 +294,3 @@ interface RestoreResponse {
   }[];
 }
 ```
-
-## 4. 后端验证流程
-
-后端需要实现以下关键功能：
-
-1. **收据验证**
-   - 将收据发送到 App Store 验证
-   - 解析验证响应
-   - 检查收据真实性
-   - 检查商品ID匹配
-   - 检查交易ID是否重复使用
-
-2. **订阅管理**
-   - 跟踪订阅状态
-   - 处理续订通知
-   - 处理退款情况
-   - 管理宽限期
-   - 处理订阅升级/降级
-
-3. **数据存储**
-   - 存储交易记录
-   - 存储订阅状态
-   - 存储用户权益
-   - 记录收据信息
-
-4. **通知处理**
-   - 实现 App Store Server Notifications
-   - 处理各种订阅事件
-   - 更新用户状态
-
-## 5. 注意事项
-
-1. **安全性**
-   - 所有验证必须在服务器端进行
-   - 不要信任客户端数据
-   - 使用 HTTPS 进行通信
-   - 实现防重放机制
-
-2. **订阅处理**
-   - 正确处理各种订阅状态
-   - 实现宽限期逻辑
-   - 处理退款情况
-   - 处理订阅升级/降级
-
-3. **错误处理**
-   - 实现重试机制
-   - 记录详细日志
-   - 提供用户友好的错误提示
-   - 处理网络问题
-
-4. **测试**
-   - 使用沙盒环境测试
-   - 测试各种购买场景
-   - 测试异常情况
-   - 测试恢复购买流程
-
-## 6. 推荐实践
-
-1. **缓存机制**
-   - 缓存商品信息
-   - 缓存订阅状态
-   - 定期更新缓存
-
-2. **用户体验**
-   - 显示加载状态
-   - 提供清晰的错误提示
-   - 实现平滑的状态转换
-   - 提供购买历史记录
-
-3. **监控和日志**
-   - 记录关键事件
-   - 监控异常情况
-   - 跟踪转化率
-   - 分析用户行为
-
-4. **合规性**
-   - 遵守 App Store 政策
-   - 提供明确的价格信息
-   - 说明自动续订条款
-   - 提供取消订阅说明 

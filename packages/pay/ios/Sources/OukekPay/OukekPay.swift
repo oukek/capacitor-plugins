@@ -1,157 +1,182 @@
 import Foundation
 import Capacitor
-import DYFStore
 import StoreKit
+
+// MARK: - StoreDelegate Protocol
+protocol StoreDelegate: AnyObject {
+    func didReceiveProducts(_ products: [SKProduct], invalidIdentifiers: [String])
+    func didCompleteRestore(_ transactions: [SKPaymentTransaction])
+}
 
 /**
  * OukekPay for handling pay-related operations
  */
-@objc(OukekPay)
-public class OukekPay: CAPPlugin {
-    private var notificationObserver: Any?
+@objc(OukekPayPlugin)
+public class OukekPayPlugin: CAPPlugin {
+    private var transactionUpdateTask: Task<Void, Never>?
     
     override public func load() {
-        // 初始化 DYFStore
-        DYFStore.default.delegate = self
-        
-        // 添加交易观察者
-        notificationObserver = NotificationCenter.default.addObserver(
-            forName: DYFStore.purchasedNotification,
-            object: nil,
-            queue: OperationQueue.main
-        ) { [weak self] notification in
-            self?.handlePurchaseNotification(notification)
+        // 监听交易更新
+        if #available(iOS 15.0, *) {
+            transactionUpdateTask = Task.detached { [weak self] in
+                for await result in Transaction.updates {
+                    if case .verified(let transaction) = result {
+                        await self?.handleVerifiedTransaction(transaction)
+                    }
+                }
+            }
         }
     }
     
     deinit {
-        if let observer = notificationObserver {
-            NotificationCenter.default.removeObserver(observer)
-        }
+        transactionUpdateTask?.cancel()
     }
     
     @objc func purchase(_ call: CAPPluginCall) {
+        guard #available(iOS 15.0, *) else {
+            call.reject("This feature requires iOS 15.0 or later")
+            return
+        }
+        
         guard let productId = call.getString("productId") else {
             call.reject("Must provide a product ID")
             return
         }
         
         // 开始购买
-        DYFStore.default.purchaseProduct(productId)
+        Task {
+            do {
+                let result = try await Store.shared.purchase(productId)
+                switch result {
+                case .success(let transaction):
+                    await handleVerifiedTransaction(transaction)
+                }
+            } catch {
+                handleError(error, call: call)
+            }
+        }
     }
     
     @objc func getProducts(_ call: CAPPluginCall) {
+        guard #available(iOS 15.0, *) else {
+            call.reject("This feature requires iOS 15.0 or later")
+            return
+        }
+        
         guard let productIds = call.getArray("productIds", String.self) else {
             call.reject("Must provide product IDs")
             return
         }
         
-        DYFStore.default.requestProducts(productIds) { products, invalidIdentifiers, error in
-            if let error = error {
-                call.reject("Failed to get products: \(error.localizedDescription)")
-                return
+        Task {
+            do {
+                let products = try await Store.shared.getProducts(productIds)
+                let productList = products.map { product in
+                    return [
+                        "productId": product.id,
+                        "price": product.price,
+                        "localizedPrice": product.formattedPrice,
+                        "localizedTitle": product.displayName,
+                        "localizedDescription": product.description
+                    ]
+                }
+                
+                call.resolve([
+                    "products": productList,
+                    "invalidProductIds": []
+                ])
+            } catch {
+                handleError(error, call: call)
             }
-            
-            let productList = products?.map { product in
-                return [
-                    "productId": product.productIdentifier,
-                    "price": product.price.stringValue,
-                    "localizedPrice": product.localizedPrice ?? "",
-                    "localizedTitle": product.localizedTitle,
-                    "localizedDescription": product.localizedDescription
-                ]
-            }
-            
-            call.resolve([
-                "products": productList ?? [],
-                "invalidProductIds": invalidIdentifiers ?? []
-            ])
         }
     }
     
     @objc func restorePurchases(_ call: CAPPluginCall) {
-        DYFStore.default.restoreTransactions()
-    }
-    
-    private func handlePurchaseNotification(_ notification: Notification) {
-        guard let info = notification.object as? DYFStore.NotificationInfo else { return }
-        
-        switch info.state! {
-        case .purchasing:
-            notifyListeners("purchaseUpdated", data: ["state": "purchasing"])
-            
-        case .cancelled:
-            notifyListeners("purchaseUpdated", data: [
-                "state": "cancelled",
-                "productId": info.productIdentifier ?? ""
-            ])
-            
-        case .failed:
-            notifyListeners("purchaseUpdated", data: [
-                "state": "failed",
-                "error": info.error?.localizedDescription ?? "Unknown error",
-                "productId": info.productIdentifier ?? ""
-            ])
-            
-        case .succeeded, .restored:
-            // 验证收据
-            verifyReceipt(info)
-            
-        case .restoreFailed:
-            notifyListeners("purchaseUpdated", data: [
-                "state": "restoreFailed",
-                "error": info.error?.localizedDescription ?? "Unknown error"
-            ])
-            
-        case .deferred:
-            notifyListeners("purchaseUpdated", data: ["state": "deferred"])
-        }
-    }
-    
-    private func verifyReceipt(_ info: DYFStore.NotificationInfo) {
-        guard let receiptURL = DYFStore.receiptURL() else {
-            notifyListeners("purchaseUpdated", data: [
-                "state": "failed",
-                "error": "No receipt URL",
-                "productId": info.productIdentifier ?? ""
-            ])
+        guard #available(iOS 15.0, *) else {
+            call.reject("This feature requires iOS 15.0 or later")
             return
         }
         
-        do {
-            let receiptData = try Data(contentsOf: receiptURL)
-            let base64Receipt = receiptData.base64EncodedString()
-            
-            // 通知前端收据信息
-            notifyListeners("purchaseUpdated", data: [
-                "state": "succeeded",
-                "productId": info.productIdentifier ?? "",
-                "transactionId": info.transactionIdentifier ?? "",
-                "receipt": base64Receipt
-            ])
-            
-            // 完成交易
-            if let transaction = info.transaction {
-                DYFStore.default.finishTransaction(transaction)
+        Task {
+            do {
+                let transactions = try await Store.shared.restorePurchases()
+                let restoredTransactions = transactions.map { transaction in
+                    return [
+                        "productId": transaction.productID,
+                        "transactionId": transaction.id
+                    ]
+                }
+                
+                await notifyListeners("purchaseUpdated", data: [
+                    "state": "restored",
+                    "transactions": restoredTransactions
+                ])
+                
+                call.resolve()
+            } catch {
+                handleError(error, call: call)
             }
+        }
+    }
+    
+    // MARK: - Private Methods
+    
+    @available(iOS 15.0, *)
+    private func handleVerifiedTransaction(_ transaction: Transaction) async {
+        do {
+            // 获取收据数据
+            let receiptData = try await Store.shared.getReceiptData()
+            
+            // 通知前端
+            await notifyListeners("purchaseUpdated", data: [
+                "state": "succeeded",
+                "productId": transaction.productID,
+                "transactionId": transaction.id,
+                "receipt": receiptData,
+                "originalTransactionId": transaction.originalID,
+                "purchaseDate": transaction.purchaseDate.timeIntervalSince1970,
+                "expirationDate": transaction.expirationDate?.timeIntervalSince1970 as Any,
+                "isUpgraded": transaction.isUpgraded
+            ])
             
         } catch {
             notifyListeners("purchaseUpdated", data: [
                 "state": "failed",
-                "error": "Failed to read receipt: \(error.localizedDescription)",
-                "productId": info.productIdentifier ?? ""
+                "error": error.localizedDescription,
+                "productId": transaction.productID
             ])
+        }
+    }
+    
+    private func handleError(_ error: Error, call: CAPPluginCall) {
+        if #available(iOS 15.0, *) {
+            switch error {
+            case Store.StoreError.productNotFound:
+                call.reject("Product not found")
+            case Store.StoreError.userCancelled:
+                call.reject("Purchase was cancelled by user")
+            case Store.StoreError.paymentPending:
+                call.reject("Payment is pending")
+            case Store.StoreError.verificationFailed:
+                call.reject("Transaction verification failed")
+            case Store.StoreError.receiptNotFound:
+                call.reject("Receipt not found")
+            default:
+                call.reject(error.localizedDescription)
+            }
+        } else {
+            call.reject(error.localizedDescription)
         }
     }
 }
 
-// MARK: - DYFStoreDelegate
-extension OukekPay: DYFStoreDelegate {
-    public func didReceiveProducts(_ products: [SKProduct], invalidIdentifiers: [String]) {
+// MARK: - StoreDelegate
+extension OukekPayPlugin: StoreDelegate {
+    func didReceiveProducts(_ products: [SKProduct], invalidIdentifiers: [String]) {
         // 可以在这里处理产品信息
     }
     
-    public func didCompleteRestore(_ transactions: [SKPaymentTransaction]) {
+    func didCompleteRestore(_ transactions: [SKPaymentTransaction]) {
         notifyListeners("purchaseUpdated", data: [
             "state": "restored",
             "transactions": transactions.map { tx in
@@ -161,5 +186,15 @@ extension OukekPay: DYFStoreDelegate {
                 ]
             }
         ])
+    }
+}
+
+// MARK: - SKProduct Extension
+private extension SKProduct {
+    var localizedPrice: String? {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.locale = priceLocale
+        return formatter.string(from: price)
     }
 }

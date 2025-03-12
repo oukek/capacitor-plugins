@@ -15,6 +15,9 @@
         <h3>当前订阅</h3>
         <p>{{ currentSubscription.name }}</p>
         <p class="expiry">到期时间: {{ formatDate(currentSubscription.expiryDate) }}</p>
+        <p v-if="currentSubscription.isUpgraded" class="upgraded">
+          已升级到更高等级会员
+        </p>
       </div>
     </div>
     
@@ -77,8 +80,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { OukekPayPlugin } from '@oukek/capacitor-pay'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { OukekPay } from '@oukek/capacitor-pay'
+import type { Product, PurchaseUpdatedState } from '@oukek/capacitor-pay'
+
+interface Subscription {
+  name: string
+  expiryDate: number
+  isUpgraded: boolean
+}
 
 // 状态变量
 const loading = ref(false)
@@ -86,8 +96,8 @@ const error = ref('')
 const subscribing = ref('')
 const statusMessage = ref('')
 const statusType = ref('')
-const subscriptionPlans = ref<any[]>([])
-const currentSubscription = ref<any>(null)
+const subscriptionPlans = ref<Product[]>([])
+const currentSubscription = ref<Subscription | null>(null)
 
 // 订阅产品ID
 const SUBSCRIPTION_PRODUCTS = [
@@ -97,14 +107,14 @@ const SUBSCRIPTION_PRODUCTS = [
 ]
 
 // 订阅周期文本
-const PERIOD_TEXT = {
+const PERIOD_TEXT: Record<string, string> = {
   'com.app.subscription.monthly': '每月',
   'com.app.subscription.quarterly': '每3个月',
   'com.app.subscription.yearly': '每年'
 }
 
 // 订阅特权
-const SUBSCRIPTION_FEATURES = {
+const SUBSCRIPTION_FEATURES: Record<string, string[]> = {
   'com.app.subscription.monthly': [
     '✓ 去除所有广告',
     '✓ 解锁高级功能',
@@ -136,8 +146,8 @@ const getFeatures = (productId: string) => {
 }
 
 // 计算每月价格
-const calculateMonthlyPrice = (plan: any) => {
-  const price = parseFloat(plan.price)
+const calculateMonthlyPrice = (plan: Product) => {
+  const price = plan.price
   const productId = plan.productId
   let monthlyPrice = price
   
@@ -151,8 +161,8 @@ const calculateMonthlyPrice = (plan: any) => {
 }
 
 // 格式化日期
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('zh-CN', {
+const formatDate = (timestamp: number) => {
+  return new Date(timestamp).toLocaleDateString('zh-CN', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
@@ -165,7 +175,7 @@ const initProducts = async () => {
   error.value = ''
   
   try {
-    const result = await OukekPayPlugin.getProducts({
+    const result = await OukekPay.getProducts({
       productIds: SUBSCRIPTION_PRODUCTS
     })
     
@@ -196,7 +206,7 @@ const subscribe = async (productId: string) => {
   statusType.value = ''
   
   try {
-    await OukekPayPlugin.purchase({ productId })
+    await OukekPay.purchase({ productId })
   } catch (err) {
     showStatus('订阅失败，请重试', 'error')
     console.error('订阅失败:', err)
@@ -208,7 +218,7 @@ const subscribe = async (productId: string) => {
 // 恢复订阅
 const restoreSubscription = async () => {
   try {
-    await OukekPayPlugin.restorePurchases()
+    await OukekPay.restorePurchases()
   } catch (err) {
     console.error('恢复订阅失败:', err)
   }
@@ -226,7 +236,7 @@ const showStatus = (message: string, type: 'success' | 'error' | 'info') => {
 }
 
 // 处理购买状态
-const handlePurchaseState = async (state: any) => {
+const handlePurchaseState = async (state: PurchaseUpdatedState) => {
   switch (state.state) {
     case 'purchasing':
       showStatus('正在处理订阅...', 'info')
@@ -235,7 +245,15 @@ const handlePurchaseState = async (state: any) => {
     case 'succeeded':
       showStatus('订阅成功！', 'success')
       if (state.receipt) {
-        await verifySubscription(state.receipt)
+        await verifySubscription({
+          receipt: state.receipt,
+          productId: state.productId!,
+          transactionId: state.transactionId!,
+          originalTransactionId: state.originalTransactionId,
+          purchaseDate: state.purchaseDate,
+          expirationDate: state.expirationDate,
+          isUpgraded: state.isUpgraded
+        })
       }
       break
       
@@ -247,39 +265,59 @@ const handlePurchaseState = async (state: any) => {
       showStatus('订阅已取消', 'info')
       break
       
-    case 'restored':
-      showStatus('订阅已恢复', 'success')
-      if (state.receipt) {
-        await verifySubscription(state.receipt)
-      }
+    case 'deferred':
+      showStatus('订阅需要批准，请等待...', 'info')
       break
       
-    case 'restoreFailed':
-      showStatus('恢复订阅失败', 'error')
+    case 'restored':
+      if (state.transactions) {
+        for (const transaction of state.transactions) {
+          await verifySubscription({
+            receipt: state.receipt!,
+            ...transaction
+          })
+        }
+        showStatus('订阅已恢复', 'success')
+      }
       break
   }
 }
 
 // 验证订阅
-const verifySubscription = async (receipt: string) => {
+interface VerifySubscriptionParams {
+  receipt: string
+  productId: string
+  transactionId: string
+  originalTransactionId?: string
+  purchaseDate?: number
+  expirationDate?: number
+  isUpgraded?: boolean
+}
+
+const verifySubscription = async (params: VerifySubscriptionParams) => {
   try {
     const response = await fetch('https://api.yourserver.com/verify-subscription', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': 'Bearer YOUR_TOKEN'
       },
       body: JSON.stringify({
-        receipt,
+        ...params,
         userId: 'current-user-id',
         platform: 'ios'
-      }),
+      })
     })
     
     const result = await response.json()
     
     if (result.valid) {
-      // 更新订阅状态
-      updateSubscriptionStatus(result.subscription)
+      // 更新当前订阅状态
+      currentSubscription.value = {
+        name: result.subscription.name,
+        expiryDate: result.subscription.expiryDate,
+        isUpgraded: result.subscription.isUpgraded
+      }
     } else {
       console.error('订阅验证失败:', result.error)
       showStatus('订阅验证失败，请联系客服', 'error')
@@ -290,14 +328,9 @@ const verifySubscription = async (receipt: string) => {
   }
 }
 
-// 更新订阅状态
-const updateSubscriptionStatus = (subscription: any) => {
-  currentSubscription.value = subscription
-}
-
 // 设置购买监听器
 const setupPurchaseListener = async () => {
-  await OukekPayPlugin.addListener('purchaseUpdated', handlePurchaseState)
+  await OukekPay.addListener('purchaseUpdated', handlePurchaseState)
 }
 
 // 组件挂载时初始化
@@ -308,7 +341,7 @@ onMounted(async () => {
 
 // 组件卸载时清理
 onUnmounted(async () => {
-  await OukekPayPlugin.removeAllListeners()
+  await OukekPay.removeAllListeners()
 })
 </script>
 
@@ -328,12 +361,12 @@ onUnmounted(async () => {
 }
 
 .subscription-status {
-  color: #2c3e50;
+  color: #42b983;
 }
 
-.expiry {
-  color: #666;
-  font-size: 0.9em;
+.subscription-status .upgraded {
+  color: #ff9800;
+  font-weight: bold;
 }
 
 .loading {
@@ -342,23 +375,18 @@ onUnmounted(async () => {
 }
 
 .spinner {
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #3498db;
-  border-radius: 50%;
   width: 40px;
   height: 40px;
+  margin: 0 auto;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #42b983;
+  border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin: 0 auto 20px;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
 
 .error-message {
-  text-align: center;
   color: #ff4444;
+  text-align: center;
   padding: 20px;
 }
 
@@ -372,21 +400,20 @@ onUnmounted(async () => {
 .plan-card {
   position: relative;
   border: 1px solid #eee;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 30px;
   text-align: center;
   background: white;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  transition: transform 0.3s, box-shadow 0.3s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease;
 }
 
 .plan-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
 }
 
 .most-popular {
-  border: 2px solid #3498db;
+  border: 2px solid #42b983;
 }
 
 .popular-badge {
@@ -394,7 +421,7 @@ onUnmounted(async () => {
   top: -12px;
   left: 50%;
   transform: translateX(-50%);
-  background: #3498db;
+  background: #42b983;
   color: white;
   padding: 4px 12px;
   border-radius: 12px;
@@ -407,8 +434,8 @@ onUnmounted(async () => {
 
 .price {
   font-size: 2em;
+  color: #42b983;
   font-weight: bold;
-  color: #2c3e50;
 }
 
 .period {
@@ -418,7 +445,7 @@ onUnmounted(async () => {
 
 .monthly-price {
   font-size: 0.9em;
-  color: #666;
+  color: #999;
 }
 
 .features {
@@ -430,27 +457,27 @@ onUnmounted(async () => {
 
 .features li {
   margin: 10px 0;
-  color: #2c3e50;
+  color: #666;
 }
 
 .subscribe-button {
   width: 100%;
-  background: #3498db;
+  background: #42b983;
   color: white;
   border: none;
-  padding: 12px 0;
-  border-radius: 6px;
+  padding: 12px;
+  border-radius: 4px;
   font-size: 1.1em;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: background-color 0.3s;
 }
 
-.subscribe-button:hover:not(:disabled) {
-  background: #2980b9;
+.subscribe-button:hover {
+  background: #3aa876;
 }
 
 .subscribe-button:disabled {
-  background: #bdc3c7;
+  background: #ccc;
   cursor: not-allowed;
 }
 
@@ -459,12 +486,12 @@ onUnmounted(async () => {
   padding: 20px;
   background: #f8f9fa;
   border-radius: 8px;
+  font-size: 0.9em;
+  color: #666;
 }
 
 .subscription-info p {
-  color: #666;
-  font-size: 0.9em;
-  margin: 5px 0;
+  margin: 10px 0;
 }
 
 .status-message {
@@ -472,42 +499,38 @@ onUnmounted(async () => {
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 15px 30px;
-  border-radius: 6px;
+  padding: 10px 20px;
+  border-radius: 4px;
   color: white;
-  animation: fadeIn 0.3s ease;
-  z-index: 1000;
+  animation: fadeIn 0.3s ease-in-out;
 }
 
-.status-message.success {
-  background: #2ecc71;
+.success {
+  background: #42b983;
 }
 
-.status-message.error {
-  background: #e74c3c;
+.error {
+  background: #ff4444;
 }
 
-.status-message.info {
-  background: #3498db;
+.info {
+  background: #2196f3;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translate(-50%, 20px); }
-  to { opacity: 1; transform: translate(-50%, 0); }
-}
-
-.retry-button {
-  margin-left: 10px;
-  padding: 5px 15px;
-  border: none;
-  background: #3498db;
-  color: white;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.retry-button:hover {
-  background: #2980b9;
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 </style>
 ```
