@@ -6,8 +6,8 @@ import UIKit
 /**
  * OukekPhoto for handling photo-related operations
  */
-@objc(OukekPhotoPlugin)
-public class OukekPhotoPlugin: CAPPlugin {
+@objc(OukekPhoto)
+public class OukekPhoto: CAPPlugin {
     override public func load() {
         print("OukekPhoto: Plugin loaded")
         NotificationCenter.default.addObserver(self,

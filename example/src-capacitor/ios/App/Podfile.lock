@@ -4,6 +4,8 @@ PODS:
   - CapacitorApp (7.0.0):
     - Capacitor
   - CapacitorCordova (7.0.0)
+  - CapacitorToast (7.0.0):
+    - Capacitor
   - OukekCapacitorPay (1.0.0):
     - Capacitor
   - OukekCapacitorPhoto (1.0.0):
@@ -13,6 +15,7 @@ DEPENDENCIES:
   - "Capacitor (from `../../../../node_modules/.pnpm/@capacitor+ios@7.0.0_@capacitor+core@7.0.1/node_modules/@capacitor/ios`)"
   - "CapacitorApp (from `../../../../node_modules/.pnpm/@capacitor+app@7.0.0_@capacitor+core@7.0.1/node_modules/@capacitor/app`)"
   - "CapacitorCordova (from `../../../../node_modules/.pnpm/@capacitor+ios@7.0.0_@capacitor+core@7.0.1/node_modules/@capacitor/ios`)"
+  - "CapacitorToast (from `../../../../node_modules/.pnpm/@capacitor+toast@7.0.0_@capacitor+core@7.0.1/node_modules/@capacitor/toast`)"
   - OukekCapacitorPay (from `../../../../packages/pay`)
   - OukekCapacitorPhoto (from `../../../../packages/photo`)
 
@@ -23,6 +26,8 @@ EXTERNAL SOURCES:
     :path: "../../../../node_modules/.pnpm/@capacitor+app@7.0.0_@capacitor+core@7.0.1/node_modules/@capacitor/app"
   CapacitorCordova:
     :path: "../../../../node_modules/.pnpm/@capacitor+ios@7.0.0_@capacitor+core@7.0.1/node_modules/@capacitor/ios"
+  CapacitorToast:
+    :path: "../../../../node_modules/.pnpm/@capacitor+toast@7.0.0_@capacitor+core@7.0.1/node_modules/@capacitor/toast"
   OukekCapacitorPay:
     :path: "../../../../packages/pay"
   OukekCapacitorPhoto:
@@ -32,9 +37,10 @@ SPEC CHECKSUMS:
   Capacitor: 82d1f3b4480d66b5996814f74500dcbc0908558c
   CapacitorApp: 9cb31064a6c6bb2b1438583733a7bf45557fc1da
   CapacitorCordova: 345f93b7edd121db98e4ec20ac94d6d7bcaf7e48
+  CapacitorToast: 788a8adeba7d0b39a4201af004997578932b453b
   OukekCapacitorPay: 6d2d15abc54242f50630123844a9381aa2f6e8f8
   OukekCapacitorPhoto: 2a29a757842c2368aaab1084ba8998c035a12bca
 
-PODFILE CHECKSUM: 785e4ae1c63c96a13ce0b7f1c79725ce523b6bf0
+PODFILE CHECKSUM: 0cf12c85ba4df94a620b6757649b513e52f0c551
 
 COCOAPODS: 1.16.2

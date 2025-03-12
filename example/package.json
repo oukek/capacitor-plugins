@@ -15,8 +15,9 @@
     "build:ios": "quasar build -m capacitor -T ios"
   },
   "dependencies": {
-    "@oukek/capacitor-photo": "workspace:*",
+    "@capacitor/toast": "^7.0.0",
     "@oukek/capacitor-pay": "workspace:*",
+    "@oukek/capacitor-photo": "workspace:*",
     "@quasar/extras": "^1.16.4",
     "quasar": "^2.16.0",
     "vue": "^3.4.18",
