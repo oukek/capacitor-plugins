@@ -6,6 +6,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('layouts/MainLayout.vue'),
     children: [
       { path: '', component: () => import('pages/PhotoPage.vue') },
+      { path: 'speech', component: () => import('pages/SpeechRecognition.vue') },
     ],
   },
 

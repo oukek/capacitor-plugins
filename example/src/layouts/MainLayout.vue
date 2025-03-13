@@ -55,10 +55,10 @@ const linksList: EssentialLinkProps[] = [
     link: '/'
   },
   {
-    title: 'Pay',
-    caption: 'Pay Plugin Demo',
-    icon: 'payment',
-    link: '/pay'
+    title: 'Speech',
+    caption: 'Speech Recognition Demo',
+    icon: 'mic',
+    link: '/speech'
   },
 ];
 

@@ -1,1 +1,13 @@
-{"appId":"org.capacitor.quasar.app","appName":"插件测试 app","webDir":"www","plugins":{"OukekPhoto":{"enabled":true}},"server":{"url":"http://192.168.1.6:9500"}}
+{
+  "appId": "org.capacitor.quasar.app",
+  "appName": "插件测试 app",
+  "webDir": "www",
+  "plugins": {
+    "OukekPhoto": {
+      "enabled": true
+    }
+  },
+  "server": {
+    "url": "http://169.254.136.130:9500"
+  }
+}

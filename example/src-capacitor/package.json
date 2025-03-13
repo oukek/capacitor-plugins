@@ -10,7 +10,7 @@
     "@capacitor/core": "^7.0.1",
     "@capacitor/ios": "7.0.0",
     "@capacitor/toast": "^7.0.0",
-    "@oukek/capacitor-pay": "workspace:*",
-    "@oukek/capacitor-photo": "workspace:*"
+    "@oukek/capacitor-photo": "workspace:*",
+    "@oukek/capacitor-speech": "workspace:*"
   }
 }
