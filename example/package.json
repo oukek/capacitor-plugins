@@ -8,7 +8,6 @@
   "private": true,
   "scripts": {
     "lint": "eslint -c ./eslint.config.js \"./src*/**/*.{ts,js,cjs,mjs,vue}\"",
-    "test": "echo \"No test specified\" && exit 0",
     "dev": "quasar dev",
     "build": "quasar build",
     "postinstall": "quasar prepare",
@@ -16,7 +15,9 @@
     "build:ios": "quasar build -m capacitor -T ios"
   },
   "dependencies": {
+    "@capacitor/toast": "^7.0.0",
     "@oukek/capacitor-photo": "workspace:*",
+    "@oukek/capacitor-speech": "workspace:*",
     "@quasar/extras": "^1.16.4",
     "quasar": "^2.16.0",
     "vue": "^3.4.18",

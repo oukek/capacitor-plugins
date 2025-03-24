@@ -1,8 +1,8 @@
 import { WebPlugin } from '@capacitor/core';
 
-import type { OukekPhoto } from './definitions';
+import type { OukekPhoto as OukekPhotoPlugin } from './definitions';
 
-export class PhotoPluginWeb extends WebPlugin implements OukekPhoto {
+export class PhotoPluginWeb extends WebPlugin implements OukekPhotoPlugin {
   async saveImageToAlbum(options: { base64Data: string }): Promise<{ success: boolean }> {
     // For web, we create a temporary link to download the image
     try {

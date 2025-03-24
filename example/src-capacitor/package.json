@@ -1,6 +1,6 @@
 {
   "name": "example",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A Quasar Project",
   "author": "CodeBear <249900679@qq.com>",
   "private": true,
@@ -9,6 +9,8 @@
     "@capacitor/cli": "^7.0.1",
     "@capacitor/core": "^7.0.1",
     "@capacitor/ios": "7.0.0",
-    "@oukek/capacitor-photo": "workspace:*"
+    "@capacitor/toast": "^7.0.0",
+    "@oukek/capacitor-photo": "workspace:*",
+    "@oukek/capacitor-speech": "workspace:*"
   }
 }

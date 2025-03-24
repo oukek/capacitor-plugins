@@ -82,10 +82,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useQuasar } from 'quasar';
-import { OukekPhotoPlugin } from '@oukek/capacitor-photo';
+import { OukekPhoto } from '@oukek/capacitor-photo';
+import { Toast } from '@capacitor/toast';
 
-const $q = useQuasar();
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const ctx = ref<CanvasRenderingContext2D | null>(null);
 const isDrawing = ref(false);
@@ -188,33 +187,30 @@ const saveCanvasToPhotoAlbum = async () => {
 
     try {
       // 调用插件保存图片到相册
-      const result = await OukekPhotoPlugin.saveImageToAlbum({
+      const result = await OukekPhoto.saveImageToAlbum({
         base64Data: base64Data
       });
+      console.log('result', result);
 
       if (result.success) {
-        $q.notify({
-          type: 'positive',
-          message: '图片已成功保存到相册'
+        await Toast.show({
+          text: '图片已成功保存到相册'
         });
       } else {
-        $q.notify({
-          type: 'negative',
-          message: '保存图片失败'
+        await Toast.show({
+          text: '保存图片失败'
         });
       }
     } catch (pluginError) {
       console.error('插件调用出错:', pluginError);
-      $q.notify({
-        type: 'negative',
-        message: '插件调用出错: ' + (pluginError instanceof Error ? pluginError.message : String(pluginError))
+      await Toast.show({
+        text: '插件调用出错: ' + (pluginError instanceof Error ? pluginError.message : String(pluginError))
       });
     }
   } catch (error) {
     console.error('保存图片时出错:', error);
-    $q.notify({
-      type: 'negative',
-      message: '保存图片时出错: ' + (error instanceof Error ? error.message : String(error))
+    await Toast.show({
+      text: '保存图片时出错: ' + (error instanceof Error ? error.message : String(error))
     });
   } finally {
     loading.value = false;

@@ -24,13 +24,6 @@ public class OukekPhoto: CAPPlugin {
         NotificationCenter.default.removeObserver(self)
     }
     
-    @objc func echo(_ call: CAPPluginCall) {
-        let value = call.getString("value") ?? ""
-        call.resolve([
-            "value": value
-        ])
-    }
-    
     @objc func saveImageToAlbum(_ call: CAPPluginCall) {
         guard let base64Data = call.getString("base64Data") else {
             call.reject("Must provide base64Data")

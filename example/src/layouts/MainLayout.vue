@@ -12,10 +12,8 @@
         />
 
         <q-toolbar-title>
-          Photo Plugin Demo
+          Plugin Demo
         </q-toolbar-title>
-
-        <div>Quasar v{{ $q.version }}</div>
       </q-toolbar>
     </q-header>
 
@@ -51,29 +49,17 @@ import EssentialLink, { type EssentialLinkProps } from 'components/EssentialLink
 
 const linksList: EssentialLinkProps[] = [
   {
-    title: 'Home',
+    title: 'Photo',
     caption: 'Photo Plugin Demo',
     icon: 'home',
     link: '/'
   },
   {
-    title: 'Capacitor Docs',
-    caption: 'capacitorjs.com',
-    icon: 'school',
-    link: 'https://capacitorjs.com'
+    title: 'Speech',
+    caption: 'Speech Recognition Demo',
+    icon: 'mic',
+    link: '/speech'
   },
-  {
-    title: 'Quasar Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev'
-  },
-  {
-    title: 'Github',
-    caption: 'Capacitor Plugins',
-    icon: 'code',
-    link: 'https://github.com/capacitor-community/plugins'
-  }
 ];
 
 const leftDrawerOpen = ref(false);
