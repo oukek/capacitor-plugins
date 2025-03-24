@@ -1,11 +1,11 @@
-# @oukek/capacitor-photo
+# @oukek/capacitor-speech
 
-相册相关插件
+录音和语音识别
 
 ## Install
 
 ```bash
-npm install @oukek/capacitor-photo
+npm install @oukek/capacitor-speech
 npx cap sync
 ```
 
@@ -14,10 +14,10 @@ npx cap sync
 在 iOS 平台上使用此插件需要在 `Info.plist` 文件中添加以下权限：
 
 ```xml
-<key>NSPhotoLibraryAddUsageDescription</key>
-<string>需要访问您的相册以保存图片</string>
-<key>NSPhotoLibraryUsageDescription</key>
-<string>需要访问您的相册以保存图片</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>用于语音识别的权限</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>用于录音的权限</string>
 ```
 
 ## API

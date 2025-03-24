@@ -112,28 +112,30 @@ class SpeechRecognizer: NSObject, SFSpeechRecognizerDelegate {
             }
             
             let request = SFSpeechURLRecognitionRequest(url: tempFile)
+            // 关闭部分结果，只要最终结果
             request.shouldReportPartialResults = false
+            // 使用独白模式，更适合完整语音识别
             request.taskHint = .dictation
             
             recognizer.recognitionTask(with: request) { result, error in
                 // 识别完成后删除临时文件
-                try? FileManager.default.removeItem(at: tempFile)
+                defer {
+                    try? FileManager.default.removeItem(at: tempFile)
+                }
                 
                 if let error = error {
                     continuation.resume(throwing: error)
                     return
                 }
                 
-                if let result = result {
-                    if result.bestTranscription.formattedString.isEmpty {
+                if let result = result, result.isFinal {
+                    let transcription = result.bestTranscription.formattedString
+                    if transcription.isEmpty {
                         continuation.resume(throwing: NSError(domain: "SpeechRecognizer", code: -1, 
                             userInfo: [NSLocalizedDescriptionKey: "No speech detected in the audio"]))
                     } else {
-                        continuation.resume(returning: result.bestTranscription.formattedString)
+                        continuation.resume(returning: transcription)
                     }
-                } else {
-                    continuation.resume(throwing: NSError(domain: "SpeechRecognizer", code: -1, 
-                        userInfo: [NSLocalizedDescriptionKey: "No recognition result available"]))
                 }
             }
         }
