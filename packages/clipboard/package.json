@@ -1,6 +1,6 @@
 {
   "name": "@oukek/capacitor-clipboard",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "剪贴板相关插件",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
