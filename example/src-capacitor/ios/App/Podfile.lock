@@ -6,9 +6,11 @@ PODS:
   - CapacitorCordova (7.0.0)
   - CapacitorToast (7.0.0):
     - Capacitor
-  - OukekCapacitorPhoto (1.0.0):
+  - OukekCapacitorClipboard (0.0.0):
     - Capacitor
-  - OukekCapacitorSpeech (1.0.0):
+  - OukekCapacitorPhoto (1.0.1):
+    - Capacitor
+  - OukekCapacitorSpeech (2.0.0):
     - Capacitor
 
 DEPENDENCIES:
@@ -16,6 +18,7 @@ DEPENDENCIES:
   - "CapacitorApp (from `../../../../node_modules/.pnpm/@capacitor+app@7.0.0_@capacitor+core@7.0.1/node_modules/@capacitor/app`)"
   - "CapacitorCordova (from `../../../../node_modules/.pnpm/@capacitor+ios@7.0.0_@capacitor+core@7.0.1/node_modules/@capacitor/ios`)"
   - "CapacitorToast (from `../../../../node_modules/.pnpm/@capacitor+toast@7.0.0_@capacitor+core@7.0.1/node_modules/@capacitor/toast`)"
+  - OukekCapacitorClipboard (from `../../../../packages/clipboard`)
   - OukekCapacitorPhoto (from `../../../../packages/photo`)
   - OukekCapacitorSpeech (from `../../../../packages/speech`)
 
@@ -28,6 +31,8 @@ EXTERNAL SOURCES:
     :path: "../../../../node_modules/.pnpm/@capacitor+ios@7.0.0_@capacitor+core@7.0.1/node_modules/@capacitor/ios"
   CapacitorToast:
     :path: "../../../../node_modules/.pnpm/@capacitor+toast@7.0.0_@capacitor+core@7.0.1/node_modules/@capacitor/toast"
+  OukekCapacitorClipboard:
+    :path: "../../../../packages/clipboard"
   OukekCapacitorPhoto:
     :path: "../../../../packages/photo"
   OukekCapacitorSpeech:
@@ -38,9 +43,10 @@ SPEC CHECKSUMS:
   CapacitorApp: 9cb31064a6c6bb2b1438583733a7bf45557fc1da
   CapacitorCordova: 345f93b7edd121db98e4ec20ac94d6d7bcaf7e48
   CapacitorToast: 788a8adeba7d0b39a4201af004997578932b453b
-  OukekCapacitorPhoto: 2a29a757842c2368aaab1084ba8998c035a12bca
-  OukekCapacitorSpeech: 0649590caf281f89844f521719c39ebcbdb7dd6b
+  OukekCapacitorClipboard: a42f4a4c11b04e635558292d57a23fff7a5856e3
+  OukekCapacitorPhoto: b84904f12e4375907159a586109eda01bc8d0c68
+  OukekCapacitorSpeech: b22cad1bf46e5acc817892b6d7634cbf87fcb30a
 
-PODFILE CHECKSUM: 70126c73452274c39b536a4f796d648845b3f532
+PODFILE CHECKSUM: e3544c9a9e09242d539c28a95dd47405bf02dc26
 
 COCOAPODS: 1.16.2

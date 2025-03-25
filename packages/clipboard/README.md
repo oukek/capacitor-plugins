@@ -1,76 +1,125 @@
-# @oukek/capacitor-speech
+# @oukek/capacitor-clipboard
 
-录音和语音识别
+剪切板相关
 
 ## Install
 
 ```bash
-npm install @oukek/capacitor-speech
+npm install @oukek/capacitor-clipboard
 npx cap sync
-```
-
-## iOS 权限配置
-
-在 iOS 平台上使用此插件需要在 `Info.plist` 文件中添加以下权限：
-
-```xml
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>用于语音识别的权限</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>用于录音的权限</string>
 ```
 
 ## API
 
 <docgen-index>
 
-* [`startRecording()`](#startrecording)
-* [`stopRecording()`](#stoprecording)
-* [`recognize(...)`](#recognize)
+* [`getChangeCount()`](#getchangecount)
+* [`read(...)`](#read)
+* [`write(...)`](#write)
+* [`clear()`](#clear)
+* [Interfaces](#interfaces)
 
 </docgen-index>
 
 <docgen-api>
 <!--Update the source file JSDoc comments and rerun docgen to update the docs below-->
 
-### startRecording()
+### getChangeCount()
 
 ```typescript
-startRecording() => Promise<void>
+getChangeCount() => Promise<{ count: number; }>
 ```
 
-开始录音
+获取剪切板变更计数，可用于检测剪切板内容是否变化
+
+**Returns:** <code>Promise&lt;{ count: number; }&gt;</code>
 
 --------------------
 
 
-### stopRecording()
+### read(...)
 
 ```typescript
-stopRecording() => Promise<{ audioBase64: string; }>
+read(options?: ClipboardReadOptions | undefined) => Promise<ClipboardReadResult>
 ```
 
-停止录音
+读取剪切板内容
 
-**Returns:** <code>Promise&lt;{ audioBase64: string; }&gt;</code>
+| Param         | Type                                                                  | Description |
+| ------------- | --------------------------------------------------------------------- | ----------- |
+| **`options`** | <code><a href="#clipboardreadoptions">ClipboardReadOptions</a></code> | 读取选项        |
+
+**Returns:** <code>Promise&lt;<a href="#clipboardreadresult">ClipboardReadResult</a>&gt;</code>
 
 --------------------
 
 
-### recognize(...)
+### write(...)
 
 ```typescript
-recognize(options: { audioBase64: string; locale?: string; }) => Promise<{ text: string; }>
+write(options: ClipboardWriteOptions) => Promise<ClipboardWriteResult>
 ```
 
-识别语音
+写入内容到剪切板
 
-| Param         | Type                                                   | Description             |
-| ------------- | ------------------------------------------------------ | ----------------------- |
-| **`options`** | <code>{ audioBase64: string; locale?: string; }</code> | 包含base64编码的音频数据和可选的语言设置 |
+| Param         | Type                                                                    | Description |
+| ------------- | ----------------------------------------------------------------------- | ----------- |
+| **`options`** | <code><a href="#clipboardwriteoptions">ClipboardWriteOptions</a></code> | 写入选项        |
 
-**Returns:** <code>Promise&lt;{ text: string; }&gt;</code>
+**Returns:** <code>Promise&lt;<a href="#clipboardwriteresult">ClipboardWriteResult</a>&gt;</code>
 
 --------------------
+
+
+### clear()
+
+```typescript
+clear() => Promise<ClipboardWriteResult>
+```
+
+清空剪切板
+
+**Returns:** <code>Promise&lt;<a href="#clipboardwriteresult">ClipboardWriteResult</a>&gt;</code>
+
+--------------------
+
+
+### Interfaces
+
+
+#### ClipboardReadResult
+
+| Prop              | Type                | Description            |
+| ----------------- | ------------------- | ---------------------- |
+| **`changeCount`** | <code>number</code> | 剪切板变更计数                |
+| **`text`**        | <code>string</code> | 剪切板中的文本（如果有）           |
+| **`url`**         | <code>string</code> | 剪切板中的URL（如果有）          |
+| **`image`**       | <code>string</code> | 剪切板中的图片，以Base64编码（如果有） |
+| **`items`**       | <code>any[]</code>  | 剪切板中的所有项目，包含所有类型       |
+
+
+#### ClipboardReadOptions
+
+| Prop         | Type                | Description                                                   |
+| ------------ | ------------------- | ------------------------------------------------------------- |
+| **`format`** | <code>string</code> | 指定要读取的数据格式: 'string', 'url', 'image', 'all' 如果不指定，会尝试读取所有可用格式 |
+
+
+#### ClipboardWriteResult
+
+| Prop              | Type                 | Description |
+| ----------------- | -------------------- | ----------- |
+| **`success`**     | <code>boolean</code> | 操作是否成功      |
+| **`message`**     | <code>string</code>  | 操作结果消息      |
+| **`changeCount`** | <code>number</code>  | 剪切板变更计数     |
+
+
+#### ClipboardWriteOptions
+
+| Prop        | Type                | Description         |
+| ----------- | ------------------- | ------------------- |
+| **`text`**  | <code>string</code> | 要写入剪切板的文本           |
+| **`url`**   | <code>string</code> | 要写入剪切板的URL          |
+| **`image`** | <code>string</code> | 要写入剪切板的图片（Base64编码） |
 
 </docgen-api>

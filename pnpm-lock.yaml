@@ -17,6 +17,9 @@ importers:
       '@capacitor/toast':
         specifier: ^7.0.0
         version: 7.0.0(@capacitor/core@7.0.1)
+      '@oukek/capacitor-clipboard':
+        specifier: workspace:*
+        version: link:../packages/clipboard
       '@oukek/capacitor-photo':
         specifier: workspace:*
         version: link:../packages/photo
@@ -87,12 +90,66 @@ importers:
       '@capacitor/toast':
         specifier: ^7.0.0
         version: 7.0.0(@capacitor/core@7.0.1)
+      '@oukek/capacitor-clipboard':
+        specifier: workspace:*
+        version: link:../../packages/clipboard
       '@oukek/capacitor-photo':
         specifier: workspace:*
         version: link:../../packages/photo
       '@oukek/capacitor-speech':
         specifier: workspace:*
         version: link:../../packages/speech
+
+  packages/clipboard:
+    devDependencies:
+      '@capacitor/android':
+        specifier: ^7.0.1
+        version: 7.0.1(@capacitor/core@7.0.1)
+      '@capacitor/core':
+        specifier: ^7.0.1
+        version: 7.0.1
+      '@capacitor/docgen':
+        specifier: ^0.3.0
+        version: 0.3.0
+      '@capacitor/ios':
+        specifier: ^7.0.1
+        version: 7.0.1(@capacitor/core@7.0.1)
+      '@ionic/eslint-config':
+        specifier: ^0.4.0
+        version: 0.4.0(eslint@9.22.0)(typescript@5.8.2)
+      '@ionic/prettier-config':
+        specifier: ^4.0.0
+        version: 4.0.0(prettier@3.5.3)
+      '@ionic/swiftlint-config':
+        specifier: ^2.0.0
+        version: 2.0.0
+      '@types/estree':
+        specifier: ^1.0.6
+        version: 1.0.6
+      '@types/node':
+        specifier: ^20.17.24
+        version: 20.17.24
+      eslint:
+        specifier: ^9.22.0
+        version: 9.22.0
+      prettier:
+        specifier: ^3.5.3
+        version: 3.5.3
+      prettier-plugin-java:
+        specifier: ^2.6.7
+        version: 2.6.7(prettier@3.5.3)
+      rimraf:
+        specifier: ^6.0.1
+        version: 6.0.1
+      rollup:
+        specifier: ^4.35.0
+        version: 4.35.0
+      swiftlint:
+        specifier: ^2.0.0
+        version: 2.0.0(typescript@5.8.2)
+      typescript:
+        specifier: ~5.8.2
+        version: 5.8.2
 
   packages/pay:
     devDependencies:
