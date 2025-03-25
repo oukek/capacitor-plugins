@@ -60,6 +60,12 @@ const linksList: EssentialLinkProps[] = [
     icon: 'mic',
     link: '/speech'
   },
+  {
+    title: 'Clipboard',
+    caption: 'Clipboard Plugin Demo',
+    icon: 'content_paste',
+    link: '/clipboard'
+  },
 ];
 
 const leftDrawerOpen = ref(false);

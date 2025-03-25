@@ -15,6 +15,7 @@ def capacitor_pods
   pod 'CapacitorToast', :path => '../../../../node_modules/.pnpm/@capacitor+toast@7.0.0_@capacitor+core@7.0.1/node_modules/@capacitor/toast'
   pod 'OukekCapacitorPhoto', :path => '../../../../packages/photo'
   pod 'OukekCapacitorSpeech', :path => '../../../../packages/speech'
+  pod 'OukekCapacitorClipboard', :path => '../../../../packages/clipboard'
 end
 
 target 'App' do
