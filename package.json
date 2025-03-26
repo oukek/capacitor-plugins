@@ -10,7 +10,8 @@
     "fmt": "pnpm -r fmt",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "pnpm build && changeset publish"
+    "release": "pnpm build && changeset publish",
+    "create-plugin": "node script/create-plugin.js"
   },
   "keywords": [
     "capacitor",

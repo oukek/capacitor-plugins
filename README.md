@@ -2,6 +2,16 @@
 
 这是一个 Capacitor 插件的 monorepo 项目，提供了多个可在 Quasar 中使用的插件。
 
+## 插件列表
+
+| 插件名称 | 描述 | 版本 |
+| --- | --- | --- |
+| [@oukek/capacitor-clipboard](./packages/clipboard/README.md) | 剪贴板相关插件 | 1.0.0 |
+| [@oukek/capacitor-pay](./packages/pay/README.md) | 支付相关插件 | 1.0.0 |
+| [@oukek/capacitor-photo](./packages/photo/README.md) | 相册相关插件 | 1.0.1 |
+| [@oukek/capacitor-speech](./packages/speech/README.md) | 语音相关插件 | 2.0.0 |
+| [@oukek/capacitor-updater](./packages/updater/README.md) | 检测 appstore 更新版本 | 0.0.0 |
+
 ## 项目结构
 
 ```
@@ -173,14 +183,6 @@ git push origin fix/bug-fix
 # 6. 代码审查并合并
 # 7. 自动发布
 ```
-
-## 插件列表
-
-### @oukek/capacitor-photo
-
-相册相关插件，提供图片保存等功能。
-
-[查看文档](./docs/photo/README.md)
 
 ## 贡献指南
 
