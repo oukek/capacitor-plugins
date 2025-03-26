@@ -10,7 +10,6 @@
 | [@oukek/capacitor-pay](./packages/pay/README.md) | 支付相关插件 | 1.0.0 |
 | [@oukek/capacitor-photo](./packages/photo/README.md) | 相册相关插件 | 1.0.1 |
 | [@oukek/capacitor-speech](./packages/speech/README.md) | 语音相关插件 | 2.0.0 |
-| [@oukek/capacitor-updater](./packages/updater/README.md) | 检测 appstore 更新版本 | 1.0.0 |
 
 ## 项目结构
 
