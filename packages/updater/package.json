@@ -1,6 +1,6 @@
 {
   "name": "@oukek/capacitor-updater",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "检测 appstore 更新版本",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
