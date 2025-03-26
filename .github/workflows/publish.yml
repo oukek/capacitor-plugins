@@ -1,9 +1,7 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
@@ -39,4 +37,22 @@ jobs:
           title: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} 
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+      # 只有在实际发布后才更新README
+      - name: Update README after publish
+        if: steps.changesets.outputs.published == 'true'
+        run: |
+          # 更新README
+          node script/update-readme.js
+          
+          # 如果README有变化，直接提交到main
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add README.md
+          if git diff --staged --quiet; then
+            echo "No changes to README.md"
+          else
+            git commit -m "docs: update plugin versions in README.md [skip ci]"
+            git push
+          fi 
