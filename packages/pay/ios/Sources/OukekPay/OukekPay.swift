@@ -11,8 +11,8 @@ protocol StoreDelegate: AnyObject {
 /**
  * OukekPay for handling pay-related operations
  */
-@objc(OukekPayPlugin)
-public class OukekPayPlugin: CAPPlugin {
+@objc(OukekPay)
+public class OukekPay: CAPPlugin {
     private var transactionUpdateTask: Task<Void, Never>?
     
     override public func load() {
@@ -43,15 +43,21 @@ public class OukekPayPlugin: CAPPlugin {
             return
         }
         
+        print("[OukekPay] 开始购买商品: \(productId)")
+        
         // 开始购买
         Task {
             do {
+                print("[OukekPay] 调用Store.shared.purchase")
                 let result = try await Store.shared.purchase(productId)
+                print("[OukekPay] 购买结果: \(result)")
                 switch result {
                 case .success(let transaction):
+                    print("[OukekPay] 交易成功，ID: \(transaction.id), 商品ID: \(transaction.productID)")
                     await handleVerifiedTransaction(transaction)
                 }
             } catch {
+                print("[OukekPay] 购买过程出错: \(error.localizedDescription)")
                 handleError(error, call: call)
             }
         }
@@ -74,7 +80,7 @@ public class OukekPayPlugin: CAPPlugin {
                 let productList = products.map { product in
                     return [
                         "productId": product.id,
-                        "price": product.price,
+                        "price": NSDecimalNumber(decimal: product.price).doubleValue,
                         "localizedPrice": product.formattedPrice,
                         "localizedTitle": product.displayName,
                         "localizedDescription": product.description
@@ -107,7 +113,7 @@ public class OukekPayPlugin: CAPPlugin {
                     ]
                 }
                 
-                await notifyListeners("purchaseUpdated", data: [
+                notifyListeners("purchaseUpdated", data: [
                     "state": "restored",
                     "transactions": restoredTransactions
                 ])
@@ -123,12 +129,16 @@ public class OukekPayPlugin: CAPPlugin {
     
     @available(iOS 15.0, *)
     private func handleVerifiedTransaction(_ transaction: Transaction) async {
+        print("[OukekPay] 处理已验证的交易，ID: \(transaction.id), 商品ID: \(transaction.productID)")
         do {
             // 获取收据数据
+            print("[OukekPay] 尝试获取收据数据")
             let receiptData = try await Store.shared.getReceiptData()
+            print("[OukekPay] 收据数据获取成功，长度: \(receiptData.count)")
             
             // 通知前端
-            await notifyListeners("purchaseUpdated", data: [
+            print("[OukekPay] 通知前端交易成功")
+            notifyListeners("purchaseUpdated", data: [
                 "state": "succeeded",
                 "productId": transaction.productID,
                 "transactionId": transaction.id,
@@ -140,6 +150,7 @@ public class OukekPayPlugin: CAPPlugin {
             ])
             
         } catch {
+            print("[OukekPay] 获取收据数据失败: \(error.localizedDescription)")
             notifyListeners("purchaseUpdated", data: [
                 "state": "failed",
                 "error": error.localizedDescription,
@@ -149,19 +160,26 @@ public class OukekPayPlugin: CAPPlugin {
     }
     
     private func handleError(_ error: Error, call: CAPPluginCall) {
+        print("[OukekPay] 处理错误: \(error.localizedDescription)")
         if #available(iOS 15.0, *) {
             switch error {
             case Store.StoreError.productNotFound:
+                print("[OukekPay] 错误类型: 商品未找到")
                 call.reject("Product not found")
             case Store.StoreError.userCancelled:
+                print("[OukekPay] 错误类型: 用户取消")
                 call.reject("Purchase was cancelled by user")
             case Store.StoreError.paymentPending:
+                print("[OukekPay] 错误类型: 支付等待中")
                 call.reject("Payment is pending")
             case Store.StoreError.verificationFailed:
+                print("[OukekPay] 错误类型: 验证失败")
                 call.reject("Transaction verification failed")
             case Store.StoreError.receiptNotFound:
+                print("[OukekPay] 错误类型: 收据未找到")
                 call.reject("Receipt not found")
             default:
+                print("[OukekPay] 错误类型: 其他错误")
                 call.reject(error.localizedDescription)
             }
         } else {
@@ -171,7 +189,7 @@ public class OukekPayPlugin: CAPPlugin {
 }
 
 // MARK: - StoreDelegate
-extension OukekPayPlugin: StoreDelegate {
+extension OukekPay: StoreDelegate {
     func didReceiveProducts(_ products: [SKProduct], invalidIdentifiers: [String]) {
         // 可以在这里处理产品信息
     }
