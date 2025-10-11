@@ -221,6 +221,11 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { OukekPay } from '@oukek/capacitor-pay'
 import type { Product, PurchaseUpdatedState } from '@oukek/capacitor-pay'
 
+// 兼容扩展类型：增加 transactionJWS（服务端验证优先使用）
+ type PurchaseUpdatedStateWithJWS = PurchaseUpdatedState & { transactionJWS?: string }
+ // 恢复交易扩展类型：包含 transactionJWS
+ type RestoredTxWithJWS = { productId: string; transactionId: string; transactionJWS?: string }
+
 // 本地存储键名
 const STORAGE_KEYS = {
   SUBSCRIPTION: 'app_subscription_status',
@@ -447,39 +452,9 @@ const loadFromLocalStorage = () => {
   }
 }
 
-// 保存数据到本地存储
-const saveToLocalStorage = () => {
-  try {
-    if (currentSubscription.value) {
-      localStorage.setItem(STORAGE_KEYS.SUBSCRIPTION, JSON.stringify(currentSubscription.value))
-    }
+// 已由服务端验证返回后统一更新本地存储（示例不直接调用保存方法）
 
-    if (purchaseHistory.value.length > 0) {
-      localStorage.setItem(STORAGE_KEYS.PURCHASE_HISTORY, JSON.stringify(purchaseHistory.value))
-    }
-  } catch (error) {
-    console.error('保存到本地存储失败:', error)
-  }
-}
-
-// 添加购买记录
-const addPurchaseRecord = (record: PurchaseRecord) => {
-  // 检查是否已存在相同交易ID的记录
-  const existingIndex = purchaseHistory.value.findIndex(
-    item => item.transactionId === record.transactionId
-  )
-
-  if (existingIndex >= 0) {
-    // 更新现有记录
-    purchaseHistory.value[existingIndex] = record
-  } else {
-    // 添加新记录
-    purchaseHistory.value.push(record)
-  }
-
-  // 保存到本地存储
-  saveToLocalStorage()
-}
+// 已由服务端验证返回后统一更新本地购买记录（示例中不在前端直接写入）
 
 // 显示收据内容
 const showReceipt = (receipt: string) => {
@@ -620,68 +595,53 @@ const showStatus = (title: string, message: string, type: 'positive' | 'negative
   showStatusDialog.value = true
 }
 
-// 验证收据
-// TODO: 这应该是后端API调用，这里只是模拟
-const verifyReceipt = async (params: {
-  receipt: string
+// 提交购买到后端进行验证（仅示例，实际应调用后端API）
+const submitPurchaseForValidation = async (params: {
+  transactionJWS?: string | undefined
+  receipt?: string | undefined
   productId: string
   transactionId: string
   originalTransactionId?: string | undefined
   purchaseDate?: number | undefined
   expirationDate?: number | undefined
 }) => {
-  console.log('验证收据:', params)
+  console.log('提交购买到后端验证:', params)
+  // TODO: 调用后端接口，例如：
+  // await fetch('/your-server/iap/verify', {
+  //   method: 'POST',
+  //   headers: { 'Content-Type': 'application/json' },
+  //   body: JSON.stringify({
+  //     transactionJWS: params.transactionJWS, // 推荐
+  //     receipt: params.receipt,               // 兼容字段，可选
+  //     productId: params.productId,
+  //     transactionId: params.transactionId,
+  //     originalTransactionId: params.originalTransactionId,
+  //     purchaseDate: params.purchaseDate,
+  //     expirationDate: params.expirationDate
+  //   })
+  // })
+  // const result = await response.json()
+  // TODO: 根据后端返回更新本地状态（购买历史、订阅状态等）
+}
 
-  // 模拟延迟
-  await new Promise(resolve => setTimeout(resolve, 500))
-
-  // 模拟验证结果
-  const result = {
-    valid: true,
-    transaction: {
-      transactionId: params.transactionId,
-      originalTransactionId: params.originalTransactionId,
-      purchaseDate: params.purchaseDate
-    }
-  }
-
-  // 添加购买记录
-  const purchaseDate = params.purchaseDate || Date.now()
-
-  addPurchaseRecord({
-    productId: params.productId,
-    transactionId: params.transactionId,
-    purchaseDate: purchaseDate,
-    receipt: params.receipt,
-    expirationDate: params.expirationDate
-  })
-
-  // 模拟更新订阅状态
-  if (SUBSCRIPTION_PRODUCT_IDS.includes(params.productId)) {
-    // 如果是订阅产品，模拟设置订阅信息
-    const productInfo = LOCAL_PRODUCTS[params.productId]
-    if (productInfo) {
-      const now = Date.now()
-      let expiryPeriod = 30 * 24 * 60 * 60 * 1000 // 默认30天
-
-      if (params.productId === '11') {
-        expiryPeriod = 90 * 24 * 60 * 60 * 1000 // 90天
-      } else if (params.productId === '12') {
-        expiryPeriod = 365 * 24 * 60 * 60 * 1000 // 365天
-      }
-
-      currentSubscription.value = {
-        name: productInfo.localizedTitle,
-        expiryDate: now + expiryPeriod,
-        isUpgraded: false
-      }
-
-      // 保存订阅状态到本地存储
-      saveToLocalStorage()
-    }
-  }
-
-  return result
+// 提交恢复的交易到后端进行验证（仅示例）
+const submitRestoredTransactionsForValidation = async (transactions: Array<{
+  productId: string
+  transactionId: string
+  transactionJWS?: string | undefined
+  originalTransactionId?: string | undefined
+  purchaseDate?: number | undefined
+  expirationDate?: number | undefined
+}>) => {
+  console.log('提交恢复交易到后端验证:', transactions)
+  // TODO: 调用后端接口批量验证恢复的交易
+  // 例如：
+  // await fetch('/your-server/iap/restore', {
+  //   method: 'POST',
+  //   headers: { 'Content-Type': 'application/json' },
+  //   body: JSON.stringify({ transactions })
+  // })
+  // TODO: 根据后端返回更新本地订阅状态与历史记录
 }
 
 // 处理购买状态
@@ -694,24 +654,22 @@ const handlePurchaseState = async (state: PurchaseUpdatedState) => {
       break
 
     case 'succeeded':
-      showStatus('成功', '购买成功！', 'positive')
+      showStatus('成功', '购买成功，已提交验证！', 'positive')
 
-      // 验证收据
-      if (state.receipt) {
-        try {
-          // TODO: 这里应该调用后端API进行验证
-          await verifyReceipt({
-            receipt: state.receipt,
-            productId: state.productId!,
-            transactionId: state.transactionId!,
-            originalTransactionId: state.originalTransactionId,
-            purchaseDate: state.purchaseDate,
-            expirationDate: state.expirationDate
-          })
-        } catch (err) {
-          console.error('验证收据失败:', err)
-          showStatus('错误', '购买验证失败，请联系客服', 'negative')
-        }
+      try {
+        const jws = (state as PurchaseUpdatedStateWithJWS).transactionJWS
+        await submitPurchaseForValidation({
+          transactionJWS: jws,                 // 推荐：服务端使用JWS验证
+          receipt: state.receipt ?? undefined, // 兼容旧服务端，可选
+          productId: state.productId!,
+          transactionId: state.transactionId!,
+          originalTransactionId: state.originalTransactionId ?? undefined,
+          purchaseDate: state.purchaseDate ?? undefined,
+          expirationDate: state.expirationDate ?? undefined
+        })
+      } catch (err) {
+        console.error('提交验证失败:', err)
+        showStatus('错误', '购买验证提交失败，请稍后重试', 'negative')
       }
       break
 
@@ -728,41 +686,20 @@ const handlePurchaseState = async (state: PurchaseUpdatedState) => {
       break
 
     case 'restored':
-      showStatus('成功', '购买已恢复', 'positive')
+      showStatus('成功', '购买已恢复，已提交验证', 'positive')
 
-      // 处理恢复的交易
       if (state.transactions && state.transactions.length > 0) {
-        // TODO: 这里应该调用后端API验证恢复的交易
-        console.log('恢复的交易:', state.transactions)
-
-        // 模拟设置订阅状态
-        const transactions = state.transactions;
-        for (const transaction of transactions) {
-          const productId = transaction.productId;
-
-          // 添加到购买历史
-          addPurchaseRecord({
-            productId: transaction.productId,
-            transactionId: transaction.transactionId,
-            purchaseDate: Date.now()
-          })
-
-          if (SUBSCRIPTION_PRODUCT_IDS.includes(productId)) {
-            const productInfo = LOCAL_PRODUCTS[productId];
-            if (productInfo) {
-              currentSubscription.value = {
-                name: productInfo.localizedTitle,
-                expiryDate: Date.now() + 30 * 24 * 60 * 60 * 1000, // 模拟30天后到期
-                isUpgraded: false
-              };
-
-              // 保存订阅状态到本地存储
-              saveToLocalStorage()
-
-              // 找到有效订阅后跳出循环
-              break;
-            }
-          }
+        try {
+          await submitRestoredTransactionsForValidation(
+            (state.transactions as RestoredTxWithJWS[]).map(t => ({
+              productId: t.productId,
+              transactionId: t.transactionId,
+              transactionJWS: t.transactionJWS,
+            }))
+          )
+        } catch (err) {
+          console.error('提交恢复交易验证失败:', err)
+          showStatus('错误', '恢复购买验证提交失败，请稍后重试', 'negative')
         }
       }
       break

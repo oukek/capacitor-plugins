@@ -70,20 +70,29 @@ actor Store {
         return purchasedTransactions
     }
     
-    /// 获取收据数据
-    func getReceiptData() throws -> String {
+    /// 获取收据数据（增加刷新兜底逻辑）
+    func getReceiptData() async throws -> String {
         print("[OukekPay] 开始获取收据数据")
         let receiptURL = Bundle.main.appStoreReceiptURL
         print("[OukekPay] receiptURL: \(String(describing: receiptURL))")
         
-        guard let url = receiptURL,
-              let receiptData = try? Data(contentsOf: url) else {
-            print("[OukekPay] 获取收据失败: 收据文件不存在或无法读取")
-            throw StoreError.receiptNotFound
+        // 尝试直接读取收据
+        if let url = receiptURL, let receiptData = try? Data(contentsOf: url) {
+            print("[OukekPay] 收据数据获取成功，大小: \(receiptData.count) 字节")
+            return receiptData.base64EncodedString()
         }
         
-        print("[OukekPay] 收据数据获取成功，大小: \(receiptData.count) 字节")
-        return receiptData.base64EncodedString()
+        // 兜底：刷新收据后再读取
+        print("[OukekPay] 获取收据失败，尝试刷新收据")
+        let refresher = ReceiptRefresher()
+        let refreshed = await refresher.refresh()
+        if refreshed, let url = Bundle.main.appStoreReceiptURL, let receiptData = try? Data(contentsOf: url) {
+            print("[OukekPay] 刷新后收据数据获取成功，大小: \(receiptData.count) 字节")
+            return receiptData.base64EncodedString()
+        }
+        
+        print("[OukekPay] 刷新后仍无法获取收据")
+        throw StoreError.receiptNotFound
     }
     
     // MARK: - Private Methods
@@ -129,6 +138,32 @@ actor Store {
             print("[OukekPay-Store] 交易验证成功")
             return safe
         }
+    }
+}
+
+// 刷新收据帮助类
+private class ReceiptRefresher: NSObject, SKRequestDelegate {
+    private var continuation: CheckedContinuation<Bool, Never>?
+    
+    func refresh() async -> Bool {
+        return await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+            self.continuation = continuation
+            let request = SKReceiptRefreshRequest()
+            request.delegate = self
+            request.start()
+        }
+    }
+    
+    func requestDidFinish(_ request: SKRequest) {
+        print("[OukekPay-Store] 收据刷新成功")
+        continuation?.resume(returning: true)
+        continuation = nil
+    }
+    
+    func request(_ request: SKRequest, didFailWithError error: Error) {
+        print("[OukekPay-Store] 收据刷新失败: \(error.localizedDescription)")
+        continuation?.resume(returning: false)
+        continuation = nil
     }
 }
 

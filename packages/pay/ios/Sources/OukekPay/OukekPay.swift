@@ -109,7 +109,8 @@ public class OukekPay: CAPPlugin {
                 let restoredTransactions = transactions.map { transaction in
                     return [
                         "productId": transaction.productID,
-                        "transactionId": transaction.id
+                        "transactionId": transaction.id,
+                        "transactionJWS": transaction.jwsRepresentation
                     ]
                 }
                 
@@ -130,33 +131,33 @@ public class OukekPay: CAPPlugin {
     @available(iOS 15.0, *)
     private func handleVerifiedTransaction(_ transaction: Transaction) async {
         print("[OukekPay] 处理已验证的交易，ID: \(transaction.id), 商品ID: \(transaction.productID)")
+        // 优先采用 StoreKit2 的 Transaction JWS 做服务端验证
+        let jws = transaction.jwsRepresentation
+        var receiptData: String? = nil
         do {
-            // 获取收据数据
-            print("[OukekPay] 尝试获取收据数据")
-            let receiptData = try await Store.shared.getReceiptData()
-            print("[OukekPay] 收据数据获取成功，长度: \(receiptData.count)")
-            
-            // 通知前端
-            print("[OukekPay] 通知前端交易成功")
-            notifyListeners("purchaseUpdated", data: [
-                "state": "succeeded",
-                "productId": transaction.productID,
-                "transactionId": transaction.id,
-                "receipt": receiptData,
-                "originalTransactionId": transaction.originalID,
-                "purchaseDate": transaction.purchaseDate.timeIntervalSince1970,
-                "expirationDate": transaction.expirationDate?.timeIntervalSince1970 as Any,
-                "isUpgraded": transaction.isUpgraded
-            ])
-            
+            print("[OukekPay] 尝试获取收据数据（可选）")
+            receiptData = try await Store.shared.getReceiptData()
+            print("[OukekPay] 收据数据获取成功，长度: \(receiptData?.count ?? 0)")
         } catch {
-            print("[OukekPay] 获取收据数据失败: \(error.localizedDescription)")
-            notifyListeners("purchaseUpdated", data: [
-                "state": "failed",
-                "error": error.localizedDescription,
-                "productId": transaction.productID
-            ])
+            print("[OukekPay] 获取收据数据失败（忽略，改用JWS验证）: \(error.localizedDescription)")
         }
+        
+        // 通知前端（总是成功，使用JWS）
+        print("[OukekPay] 通知前端交易成功（JWS）")
+        var data: [String: Any] = [
+            "state": "succeeded",
+            "productId": transaction.productID,
+            "transactionId": transaction.id,
+            "originalTransactionId": transaction.originalID,
+            "purchaseDate": transaction.purchaseDate.timeIntervalSince1970,
+            "expirationDate": transaction.expirationDate?.timeIntervalSince1970 as Any,
+            "isUpgraded": transaction.isUpgraded,
+            "transactionJWS": jws
+        ]
+        if let receiptData = receiptData {
+            data["receipt"] = receiptData
+        }
+        notifyListeners("purchaseUpdated", data: data)
     }
     
     private func handleError(_ error: Error, call: CAPPluginCall) {
