@@ -8,6 +8,7 @@ const routes: RouteRecordRaw[] = [
       { path: '', component: () => import('pages/PhotoPage.vue') },
       { path: 'speech', component: () => import('pages/SpeechRecognition.vue') },
       { path: 'clipboard', component: () => import('pages/ClipboardPage.vue') },
+      { path: 'payment', component: () => import('pages/PaymentPage.vue') },
     ],
   },
 

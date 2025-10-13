@@ -66,6 +66,12 @@ const linksList: EssentialLinkProps[] = [
     icon: 'content_paste',
     link: '/clipboard'
   },
+  {
+    title: '支付',
+    caption: '支付功能测试',
+    icon: 'payment',
+    link: '/payment'
+  },
 ];
 
 const leftDrawerOpen = ref(false);

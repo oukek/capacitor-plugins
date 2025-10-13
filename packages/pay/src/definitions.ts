@@ -69,7 +69,9 @@ export interface PurchaseUpdatedState {
   expirationDate?: number;
   /** 是否已升级（仅订阅商品） */
   isUpgraded?: boolean;
-  /** Base64 编码的收据数据 */
+  /** 交易 JWS（StoreKit 2，推荐服务端验证） */
+  transactionJWS?: string;
+  /** Base64 编码的收据数据（可选，兼容旧服务端） */
   receipt?: string;
   /** 错误信息 */
   error?: string;
