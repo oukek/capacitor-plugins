@@ -19,11 +19,13 @@
     "@oukek/capacitor-clipboard": "workspace:*",
     "@oukek/capacitor-pay": "workspace:*",
     "@oukek/capacitor-photo": "workspace:*",
+    "@oukek/capacitor-calendar": "workspace:*",
     "@oukek/capacitor-speech": "workspace:*",
     "@quasar/extras": "^1.17.0",
     "quasar": "^2.18.5",
     "vue": "^3.5.22",
-    "vue-router": "^4.5.1"
+    "vue-router": "^4.5.1",
+    "dayjs": "^1.11.18"
   },
   "devDependencies": {
     "@eslint/js": "^9.37.0",

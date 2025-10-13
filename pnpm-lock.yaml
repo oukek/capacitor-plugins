@@ -17,6 +17,9 @@ importers:
       '@capacitor/toast':
         specifier: ^7.0.2
         version: 7.0.2(@capacitor/core@7.4.3)
+      '@oukek/capacitor-calendar':
+        specifier: workspace:*
+        version: link:../packages/calendar
       '@oukek/capacitor-clipboard':
         specifier: workspace:*
         version: link:../packages/clipboard
@@ -32,6 +35,9 @@ importers:
       '@quasar/extras':
         specifier: ^1.17.0
         version: 1.17.0
+      dayjs:
+        specifier: ^1.11.18
+        version: 1.11.18
       quasar:
         specifier: ^2.18.5
         version: 2.18.5
@@ -93,6 +99,9 @@ importers:
       '@capacitor/toast':
         specifier: ^7.0.2
         version: 7.0.2(@capacitor/core@7.4.3)
+      '@oukek/capacitor-calendar':
+        specifier: workspace:*
+        version: link:../../packages/calendar
       '@oukek/capacitor-clipboard':
         specifier: workspace:*
         version: link:../../packages/clipboard
@@ -105,6 +114,57 @@ importers:
       '@oukek/capacitor-speech':
         specifier: workspace:*
         version: link:../../packages/speech
+
+  packages/calendar:
+    devDependencies:
+      '@capacitor/android':
+        specifier: ^7.4.3
+        version: 7.4.3(@capacitor/core@7.4.3)
+      '@capacitor/core':
+        specifier: ^7.4.3
+        version: 7.4.3
+      '@capacitor/docgen':
+        specifier: ^0.3.0
+        version: 0.3.0
+      '@capacitor/ios':
+        specifier: ^7.4.3
+        version: 7.4.3(@capacitor/core@7.4.3)
+      '@ionic/eslint-config':
+        specifier: ^0.4.0
+        version: 0.4.0(eslint@9.37.0)(typescript@5.9.3)
+      '@ionic/prettier-config':
+        specifier: ^4.0.0
+        version: 4.0.0(prettier@3.6.2)
+      '@ionic/swiftlint-config':
+        specifier: ^2.0.0
+        version: 2.0.0
+      '@types/estree':
+        specifier: ^1.0.8
+        version: 1.0.8
+      '@types/node':
+        specifier: ^20.19.20
+        version: 20.19.20
+      eslint:
+        specifier: ^9.37.0
+        version: 9.37.0
+      prettier:
+        specifier: ^3.6.2
+        version: 3.6.2
+      prettier-plugin-java:
+        specifier: ^2.7.5
+        version: 2.7.5(prettier@3.6.2)
+      rimraf:
+        specifier: ^6.0.1
+        version: 6.0.1
+      rollup:
+        specifier: ^4.52.4
+        version: 4.52.4
+      swiftlint:
+        specifier: ^2.0.0
+        version: 2.0.0(typescript@5.9.3)
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
 
   packages/clipboard:
     devDependencies:
@@ -1627,6 +1687,9 @@ packages:
   data-view-byte-offset@1.0.1:
     resolution: {integrity: sha512-BS8PfmtDGnrgYdOonGZQdLZslWIeCGFP9tpan0hi1Co2Zr2NKADsvGYA8XxuG/4UWgJ6Cjtv+YJnB6MM69QGlQ==}
     engines: {node: '>= 0.4'}
+
+  dayjs@1.11.18:
+    resolution: {integrity: sha512-zFBQ7WFRvVRhKcWoUh+ZA1g2HVgUbsZm9sbddh8EC5iv93sui8DVVz1Npvz+r6meo9VKfa8NyLWBsQK1VvIKPA==}
 
   debug@2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
@@ -5270,6 +5333,8 @@ snapshots:
       call-bound: 1.0.4
       es-errors: 1.3.0
       is-data-view: 1.0.2
+
+  dayjs@1.11.18: {}
 
   debug@2.6.9:
     dependencies:

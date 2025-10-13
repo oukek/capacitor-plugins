@@ -6,6 +6,7 @@
 
 | 插件名称 | 描述 | 版本 |
 | --- | --- | --- |
+| [@oukek/capacitor-calendar](./packages/calendar/README.md) | 日历相关插件 | 1.0.0 |
 | [@oukek/capacitor-clipboard](./packages/clipboard/README.md) | 剪贴板相关插件 | 1.0.0 |
 | [@oukek/capacitor-pay](./packages/pay/README.md) | 支付相关插件 | 1.0.0 |
 | [@oukek/capacitor-photo](./packages/photo/README.md) | 相册相关插件 | 1.0.1 |

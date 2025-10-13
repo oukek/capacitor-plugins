@@ -19,12 +19,12 @@ public class OukekPay: CAPPlugin {
         // 监听交易更新
         if #available(iOS 15.0, *) {
             transactionUpdateTask = Task.detached { [weak self] in
-                for await result in Transaction.updates {
-                    if case .verified(let transaction) = result {
-                        await self?.handleVerifiedTransaction(transaction)
-                    }
+            for await result in Transaction.updates {
+                if case .verified(let transaction) = result {
+                    await self?.handleVerifiedTransaction(transaction, verificationResult: result)
                 }
             }
+        }
         }
     }
     
@@ -43,18 +43,62 @@ public class OukekPay: CAPPlugin {
             return
         }
         
+        // 获取可选的 appAccountToken
+        var appAccountToken: UUID? = nil
+        if let appAccountTokenString = call.getString("appAccountToken") {
+            if let uuid = UUID(uuidString: appAccountTokenString) {
+                appAccountToken = uuid
+                print("[OukekPay] 使用提供的 appAccountToken: \(appAccountTokenString)")
+            } else {
+                call.reject("Invalid appAccountToken format. Must be a valid UUID string.")
+                return
+            }
+        }
+        
         print("[OukekPay] 开始购买商品: \(productId)")
         
         // 开始购买
         Task {
             do {
-                print("[OukekPay] 调用Store.shared.purchase")
-                let result = try await Store.shared.purchase(productId)
-                print("[OukekPay] 购买结果: \(result)")
-                switch result {
-                case .success(let transaction):
-                    print("[OukekPay] 交易成功，ID: \(transaction.id), 商品ID: \(transaction.productID)")
-                    await handleVerifiedTransaction(transaction)
+                // 首先获取产品信息
+                print("[OukekPay] 获取产品信息")
+                let products = try await Store.shared.getProducts([productId])
+                guard let product = products.first else {
+                    call.reject("Product not found")
+                    return
+                }
+                
+                print("[OukekPay] 开始购买产品: \(product.displayName)")
+                
+                // 使用 StoreKit 2 的 purchase 方法，支持 appAccountToken
+                let purchaseResult: Product.PurchaseResult
+                if let appAccountToken = appAccountToken {
+                    purchaseResult = try await product.purchase(options: [.appAccountToken(appAccountToken)])
+                } else {
+                    purchaseResult = try await product.purchase()
+                }
+                
+                print("[OukekPay] 购买结果: \(purchaseResult)")
+                
+                switch purchaseResult {
+                case .success(let verificationResult):
+                    if case .verified(let transaction) = verificationResult {
+                        print("[OukekPay] 交易成功，ID: \(transaction.id), 商品ID: \(transaction.productID)")
+                        if let token = transaction.appAccountToken {
+                            print("[OukekPay] 交易中的 appAccountToken: \(token)")
+                        }
+                        await transaction.finish()
+                        await handleVerifiedTransaction(transaction, verificationResult: verificationResult)
+                        call.resolve()
+                    } else {
+                        call.reject("Transaction verification failed")
+                    }
+                case .userCancelled:
+                    call.reject("Purchase was cancelled by user")
+                case .pending:
+                    call.reject("Payment is pending")
+                @unknown default:
+                    call.reject("Unknown purchase result")
                 }
             } catch {
                 print("[OukekPay] 购买过程出错: \(error.localizedDescription)")
@@ -105,13 +149,28 @@ public class OukekPay: CAPPlugin {
         
         Task {
             do {
-                let transactions = try await Store.shared.restorePurchases()
-                let restoredTransactions = transactions.map { transaction in
-                    return [
-                        "productId": transaction.productID,
-                        "transactionId": transaction.id,
-                        "transactionJWS": transaction.jwsRepresentation
-                    ]
+                let verificationResults = try await Store.shared.restorePurchases()
+                let restoredTransactions = verificationResults.compactMap { result -> [String: Any]? in
+                    switch result {
+                    case .verified(let transaction):
+                        var transactionData: [String: Any] = [
+                            "productId": transaction.productID,
+                            "transactionId": transaction.id
+                        ]
+                        
+                        // 现在可以从 VerificationResult 获取 jwsRepresentation
+                        transactionData["transactionJWS"] = result.jwsRepresentation
+                        
+                        return transactionData
+                    case .unverified(let transaction, let error):
+                        print("[OukekPay] 未验证的交易: \(transaction.id), 错误: \(error)")
+                        // 可以选择是否包含未验证的交易
+                        return [
+                            "productId": transaction.productID,
+                            "transactionId": transaction.id,
+                            "verified": false
+                        ]
+                    }
                 }
                 
                 notifyListeners("purchaseUpdated", data: [
@@ -129,35 +188,38 @@ public class OukekPay: CAPPlugin {
     // MARK: - Private Methods
     
     @available(iOS 15.0, *)
-    private func handleVerifiedTransaction(_ transaction: Transaction) async {
+    private func handleVerifiedTransaction(_ transaction: Transaction, verificationResult: VerificationResult<Transaction>) async {
         print("[OukekPay] 处理已验证的交易，ID: \(transaction.id), 商品ID: \(transaction.productID)")
-        // 优先采用 StoreKit2 的 Transaction JWS 做服务端验证
-        let jws = transaction.jwsRepresentation
-        var receiptData: String? = nil
-        do {
-            print("[OukekPay] 尝试获取收据数据（可选）")
-            receiptData = try await Store.shared.getReceiptData()
-            print("[OukekPay] 收据数据获取成功，长度: \(receiptData?.count ?? 0)")
-        } catch {
-            print("[OukekPay] 获取收据数据失败（忽略，改用JWS验证）: \(error.localizedDescription)")
-        }
         
-        // 通知前端（总是成功，使用JWS）
-        print("[OukekPay] 通知前端交易成功（JWS）")
+        let receiptData = await Store.shared.getReceiptData()
+        
         var data: [String: Any] = [
-            "state": "succeeded",
             "productId": transaction.productID,
             "transactionId": transaction.id,
             "originalTransactionId": transaction.originalID,
             "purchaseDate": transaction.purchaseDate.timeIntervalSince1970,
             "expirationDate": transaction.expirationDate?.timeIntervalSince1970 as Any,
-            "isUpgraded": transaction.isUpgraded,
-            "transactionJWS": jws
+            "isUpgraded": transaction.isUpgraded
         ]
-        if let receiptData = receiptData {
-            data["receipt"] = receiptData
+        
+        // 现在可以从 VerificationResult 获取 jwsRepresentation
+        data["transactionJWS"] = verificationResult.jwsRepresentation
+        
+        // 添加 appAccountToken 到返回数据中
+        if let appAccountToken = transaction.appAccountToken {
+            data["appAccountToken"] = appAccountToken.uuidString
+            print("[OukekPay] 交易包含 appAccountToken: \(appAccountToken.uuidString)")
         }
-        notifyListeners("purchaseUpdated", data: data)
+        
+        // 如果有收据数据，添加到响应中
+        if let receiptData = receiptData {
+            data["receiptData"] = receiptData.base64EncodedString()
+        }
+        
+        notifyListeners("purchaseUpdated", data: [
+            "state": "purchased",
+            "data": data
+        ])
     }
     
     private func handleError(_ error: Error, call: CAPPluginCall) {

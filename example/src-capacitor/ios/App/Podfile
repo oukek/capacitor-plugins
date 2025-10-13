@@ -16,6 +16,7 @@ def capacitor_pods
   pod 'OukekCapacitorClipboard', :path => '../../../../packages/clipboard'
   pod 'OukekCapacitorPay', :path => '../../../../packages/pay'
   pod 'OukekCapacitorPhoto', :path => '../../../../packages/photo'
+  pod 'OukekCapacitorCalendar', :path => '../../../../packages/calendar'
   pod 'OukekCapacitorSpeech', :path => '../../../../packages/speech'
 end
 

@@ -20,79 +20,67 @@ actor Store {
         return try await Product.products(for: identifiers)
     }
     
-    /// 购买商品
-    func purchase(_ productId: String) async throws -> StoreResult {
-        print("[OukekPay-Store] 开始购买商品: \(productId)")
-        guard let product = try await Product.products(for: [productId]).first else {
-            print("[OukekPay-Store] 未找到商品: \(productId)")
-            throw StoreError.productNotFound
-        }
-        
-        print("[OukekPay-Store] 找到商品，价格: \(product.price), 开始购买")
-        // 开始购买
+    @available(iOS 15.0, *)
+    func purchase(_ product: Product) async throws -> VerificationResult<Transaction> {
         let result = try await product.purchase()
-        print("[OukekPay-Store] 购买API调用结果: \(result)")
         
         switch result {
-        case .success(let verification):
-            print("[OukekPay-Store] 购买成功，开始验证交易")
-            // 验证购买交易
-            let transaction = try checkVerified(verification)
-            print("[OukekPay-Store] 交易验证成功，ID: \(transaction.id)")
-            // 完成交易
-            await transaction.finish()
-            print("[OukekPay-Store] 交易已完成")
-            // 返回结果
-            return .success(transaction)
-            
+        case .success(let verificationResult):
+            if case .verified(let transaction) = verificationResult {
+                await transaction.finish()
+                // Store the transaction in our purchased transactions list
+                if transaction.revocationDate == nil {
+                    purchasedTransactions.append(transaction)
+                }
+            }
+            return verificationResult
         case .userCancelled:
-            print("[OukekPay-Store] 用户取消了购买")
             throw StoreError.userCancelled
-            
         case .pending:
-            print("[OukekPay-Store] 支付等待中")
             throw StoreError.paymentPending
-            
         @unknown default:
-            print("[OukekPay-Store] 未知购买结果")
             throw StoreError.unknown
         }
     }
     
-    /// 恢复购买
-    func restorePurchases() async throws -> [Transaction] {
+    /// 恢复购买 - 返回 VerificationResult 以便获取 jwsRepresentation
+    func restorePurchases() async throws -> [VerificationResult<Transaction>] {
+        var results: [VerificationResult<Transaction>] = []
         // 请求最新的交易
         for await result in Transaction.currentEntitlements {
+            results.append(result)
             if case .verified(let transaction) = result {
                 purchasedTransactions.append(transaction)
             }
         }
-        return purchasedTransactions
+        return results
     }
     
     /// 获取收据数据（增加刷新兜底逻辑）
-    func getReceiptData() async throws -> String {
+    func getReceiptData() async -> Data? {
         print("[OukekPay] 开始获取收据数据")
         let receiptURL = Bundle.main.appStoreReceiptURL
         print("[OukekPay] receiptURL: \(String(describing: receiptURL))")
         
         // 尝试直接读取收据
         if let url = receiptURL, let receiptData = try? Data(contentsOf: url) {
-            print("[OukekPay] 收据数据获取成功，大小: \(receiptData.count) 字节")
-            return receiptData.base64EncodedString()
+            print("[OukekPay] 收据数据读取成功，大小: \(receiptData.count) bytes")
+            return receiptData
         }
         
-        // 兜底：刷新收据后再读取
-        print("[OukekPay] 获取收据失败，尝试刷新收据")
+        print("[OukekPay] 收据文件不存在或读取失败，尝试刷新收据")
+        
+        // 如果收据不存在，尝试刷新
         let refresher = ReceiptRefresher()
-        let refreshed = await refresher.refresh()
-        if refreshed, let url = Bundle.main.appStoreReceiptURL, let receiptData = try? Data(contentsOf: url) {
-            print("[OukekPay] 刷新后收据数据获取成功，大小: \(receiptData.count) 字节")
-            return receiptData.base64EncodedString()
-        }
+        let success = await refresher.refresh()
         
-        print("[OukekPay] 刷新后仍无法获取收据")
-        throw StoreError.receiptNotFound
+        if success, let url = receiptURL, let receiptData = try? Data(contentsOf: url) {
+            print("[OukekPay] 收据刷新成功，大小: \(receiptData.count) bytes")
+            return receiptData
+        } else {
+            print("[OukekPay] 收据刷新失败或仍无法读取")
+            return nil
+        }
     }
     
     // MARK: - Private Methods

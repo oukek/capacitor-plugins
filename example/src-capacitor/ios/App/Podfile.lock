@@ -6,6 +6,8 @@ PODS:
   - CapacitorCordova (7.0.0)
   - CapacitorToast (7.0.2):
     - Capacitor
+  - OukekCapacitorCalendar (1.0.0):
+    - Capacitor
   - OukekCapacitorClipboard (1.0.0):
     - Capacitor
   - OukekCapacitorPay (1.0.0):
@@ -20,6 +22,7 @@ DEPENDENCIES:
   - "CapacitorApp (from `../../../../node_modules/.pnpm/@capacitor+app@7.1.0_@capacitor+core@7.4.3/node_modules/@capacitor/app`)"
   - "CapacitorCordova (from `../../../../node_modules/.pnpm/@capacitor+ios@7.0.0_@capacitor+core@7.4.3/node_modules/@capacitor/ios`)"
   - "CapacitorToast (from `../../../../node_modules/.pnpm/@capacitor+toast@7.0.2_@capacitor+core@7.4.3/node_modules/@capacitor/toast`)"
+  - OukekCapacitorCalendar (from `../../../../packages/calendar`)
   - OukekCapacitorClipboard (from `../../../../packages/clipboard`)
   - OukekCapacitorPay (from `../../../../packages/pay`)
   - OukekCapacitorPhoto (from `../../../../packages/photo`)
@@ -34,6 +37,8 @@ EXTERNAL SOURCES:
     :path: "../../../../node_modules/.pnpm/@capacitor+ios@7.0.0_@capacitor+core@7.4.3/node_modules/@capacitor/ios"
   CapacitorToast:
     :path: "../../../../node_modules/.pnpm/@capacitor+toast@7.0.2_@capacitor+core@7.4.3/node_modules/@capacitor/toast"
+  OukekCapacitorCalendar:
+    :path: "../../../../packages/calendar"
   OukekCapacitorClipboard:
     :path: "../../../../packages/clipboard"
   OukekCapacitorPay:
@@ -48,11 +53,12 @@ SPEC CHECKSUMS:
   CapacitorApp: 26587c2ce485d88ddb39adb21cac64f8e481afe3
   CapacitorCordova: 345f93b7edd121db98e4ec20ac94d6d7bcaf7e48
   CapacitorToast: 166611aea815418fc08894b77a915773e3d059d5
+  OukekCapacitorCalendar: c7635677191aa692a383e5786a6e5bf4768a8950
   OukekCapacitorClipboard: 652900351db78fdae338ef3211061716d734ab0a
   OukekCapacitorPay: 6d2d15abc54242f50630123844a9381aa2f6e8f8
   OukekCapacitorPhoto: b84904f12e4375907159a586109eda01bc8d0c68
   OukekCapacitorSpeech: b22cad1bf46e5acc817892b6d7634cbf87fcb30a
 
-PODFILE CHECKSUM: 5b6f4007e69699e3320078e6ed5770f4b6c14618
+PODFILE CHECKSUM: a0a58efd9ec3b07ae8c2a9386c796d23d5fb00e4
 
 COCOAPODS: 1.16.2
