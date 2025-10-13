@@ -1,6 +1,6 @@
 {
   "name": "@oukek/capacitor-pay",
-  "version": "2.0.0",
+  "version": "1.0.0",
   "description": "支付相关插件",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
