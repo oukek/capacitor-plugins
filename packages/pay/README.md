@@ -109,10 +109,16 @@ const getProducts = async () => {
   }
 };
 
-// 购买商品
-const purchase = async (productId: string) => {
+// 购买商品（绑定用户身份）
+const purchase = async (productId: string, userId?: string) => {
   try {
-    await OukekPay.purchase({ productId });
+    // 获取或生成用户的UUID
+    const appAccountToken = userId ? await getUserUUID(userId) : undefined;
+    
+    await OukekPay.purchase({ 
+      productId, 
+      appAccountToken // UUID格式的用户标识
+    });
   } catch (error) {
     console.error('Purchase failed:', error);
   }
@@ -130,6 +136,7 @@ const setupPurchaseListener = async () => {
         // 将交易信息提交到后端进行验证（优先使用 transactionJWS）
         await submitPurchaseForValidation({
           transactionJWS: state.transactionJWS,
+          appAccountToken: state.appAccountToken, // 绑定的用户ID
           receipt: state.receipt, // 可选兼容字段
           productId: state.productId!,
           transactionId: state.transactionId!,

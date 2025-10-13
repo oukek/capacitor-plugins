@@ -9,9 +9,9 @@ export interface OukekPay {
 
   /**
    * 购买商品
-   * @param options 包含商品 ID 的选项
+   * @param options 包含商品 ID 和可选用户 ID 的选项
    */
-  purchase(options: { productId: string }): Promise<void>;
+  purchase(options: { productId: string; appAccountToken?: string }): Promise<void>;
 
   /**
    * 恢复购买
@@ -61,21 +61,23 @@ export interface PurchaseUpdatedState {
   productId?: string;
   /** 交易 ID */
   transactionId?: string;
-  /** 原始交易 ID（用于订阅续期） */
+  /** 原始交易 ID */
   originalTransactionId?: string;
   /** 购买日期（时间戳） */
   purchaseDate?: number;
-  /** 过期日期（时间戳，仅订阅商品） */
+  /** 过期日期（时间戳） */
   expirationDate?: number;
-  /** 是否已升级（仅订阅商品） */
+  /** 是否已升级 */
   isUpgraded?: boolean;
-  /** 交易 JWS（StoreKit 2，推荐服务端验证） */
+  /** 交易 JWS（推荐用于后端验证） */
   transactionJWS?: string;
-  /** Base64 编码的收据数据（可选，兼容旧服务端） */
+  /** 用户账户令牌（绑定的用户ID） */
+  appAccountToken?: string;
+  /** 收据数据（兼容字段） */
   receipt?: string;
   /** 错误信息 */
   error?: string;
-  /** 恢复购买时的交易列表 */
+  /** 恢复的交易列表 */
   transactions?: {
     productId: string;
     transactionId: string;

@@ -72,6 +72,12 @@ const linksList: EssentialLinkProps[] = [
     icon: 'payment',
     link: '/payment'
   },
+  {
+    title: '日历',
+    caption: '日历插件测试',
+    icon: 'event',
+    link: '/calendar'
+  },
 ];
 
 const leftDrawerOpen = ref(false);

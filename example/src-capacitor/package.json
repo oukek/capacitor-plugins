@@ -13,6 +13,7 @@
     "@oukek/capacitor-clipboard": "workspace:*",
     "@oukek/capacitor-pay": "workspace:*",
     "@oukek/capacitor-photo": "workspace:*",
+    "@oukek/capacitor-calendar": "workspace:*",
     "@oukek/capacitor-speech": "workspace:*"
   }
 }
