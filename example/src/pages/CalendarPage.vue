@@ -400,6 +400,7 @@ const getEvents = async () => {
 
     events.value = result.events;
     showMessage(`获取到 ${result.events.length} 个事件`);
+    console.log('获取到的事件:', result.events);
   } catch (error) {
     console.error('获取事件错误:', error);
     showMessage(`获取事件失败: ${String(error)}`, 'error');
